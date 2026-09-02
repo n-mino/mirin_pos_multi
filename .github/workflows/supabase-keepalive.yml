@@ -1,0 +1,22 @@
+name: Supabase Keep-Alive
+
+# Supabase無料枠は1週間APIアクセスがないとプロジェクトが自動休止するため、
+# 週2回(日曜・水曜)軽いリクエストを送って休止を防ぐ。
+# Project URL / Publishable key はSupabase側で「公開しても安全」と明記されている値のため
+# secretsではなくワークフロー内に直接記載している。
+
+on:
+  schedule:
+    - cron: "0 3 * * 0,3"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          status=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "https://ketidzbsczlxamybkedi.supabase.co/rest/v1/" \
+            -H "apikey: sb_publishable_ZaCZAhGdNn_Zq8jHRESF3A_GKVP5eX9")
+          echo "Supabase REST API responded with HTTP $status"

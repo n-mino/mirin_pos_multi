@@ -1,0 +1,179 @@
+-- ============================================================================
+-- mirin_pos_multi — フェーズ0 初期スキーマ
+-- Supabaseダッシュボード「SQL Editor」に貼り付けて実行してください。
+-- 既存の pos-app-pwa (localStorage版) には一切影響しません。
+-- ============================================================================
+
+create extension if not exists pgcrypto;
+
+-- ----------------------------------------------------------------------------
+-- employees: 従業員マスタ + ログインアカウントの紐付け
+-- ----------------------------------------------------------------------------
+create table if not exists public.employees (
+  id text primary key,                                   -- 既存アプリの uid("emp") 形式をそのまま流用
+  name text not null,
+  hourly_wage numeric not null default 0,
+  role text not null default 'staff' check (role in ('admin', 'staff')),
+  auth_user_id uuid unique references auth.users(id) on delete set null,
+  approved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- ----------------------------------------------------------------------------
+-- seats: 座席状態(既存 data.seats[n] を1行1座席のテーブルに分離)
+-- ----------------------------------------------------------------------------
+create table if not exists public.seats (
+  seat_no integer primary key,
+  status text not null default 'empty' check (status in ('empty', 'occupied', 'awaiting_checkout')),
+  guests integer,
+  companion_name text not null default '',
+  companion_employee_id text references public.employees(id),
+  companion_kind text not null default '',
+  start_time timestamptz,
+  orders jsonb not null default '[]'::jsonb,
+  checkout_draft jsonb,                                   -- サブ端末が提出した会計プレビュー(フェーズ3/4で使用)
+  updated_at timestamptz not null default now(),
+  updated_by text references public.employees(id)
+);
+
+-- ----------------------------------------------------------------------------
+-- shifts: 勤怠(既存 data.payroll.shifts[] を1行1勤怠のテーブルに分離)
+-- ----------------------------------------------------------------------------
+create table if not exists public.shifts (
+  id text primary key,                                    -- 既存の uid("shift") 形式
+  employee_id text not null references public.employees(id),
+  date date not null,
+  start_time text not null,
+  end_time text not null,
+  rank_key text not null default '',
+  daily_wage numeric not null default 0,
+  option numeric not null default 0,
+  option2 numeric not null default 0,
+  note text not null default '',
+  paid_date date,
+  created_at timestamptz not null default now()
+);
+
+-- ----------------------------------------------------------------------------
+-- products: 商品マスタ(既存 data.products[] とほぼ同じ列構成)
+-- ----------------------------------------------------------------------------
+create table if not exists public.products (
+  id text primary key,
+  name text not null,
+  price numeric not null default 0,
+  category text not null default '',
+  sold_out boolean not null default false,
+  bottle_back boolean not null default false,
+  time_price jsonb
+);
+
+-- ============================================================================
+-- ヘルパー関数(RLSポリシーから参照)
+-- ============================================================================
+
+-- ログイン中ユーザーが承認済み従業員かどうか
+create or replace function public.is_approved()
+returns boolean
+language sql security definer stable
+as $$
+  select exists (
+    select 1 from public.employees
+    where auth_user_id = auth.uid() and approved = true
+  );
+$$;
+
+-- ログイン中ユーザーが承認済み管理者かどうか
+create or replace function public.is_admin()
+returns boolean
+language sql security definer stable
+as $$
+  select exists (
+    select 1 from public.employees
+    where auth_user_id = auth.uid() and approved = true and role = 'admin'
+  );
+$$;
+
+-- ログイン中ユーザー自身の employees.id
+create or replace function public.current_employee_id()
+returns text
+language sql security definer stable
+as $$
+  select id from public.employees where auth_user_id = auth.uid() limit 1;
+$$;
+
+-- ============================================================================
+-- RLS(行レベルセキュリティ)有効化 + ポリシー
+-- ============================================================================
+
+alter table public.employees enable row level security;
+alter table public.seats enable row level security;
+alter table public.shifts enable row level security;
+alter table public.products enable row level security;
+
+-- --- employees --------------------------------------------------------------
+-- 承認済み従業員は全員分を閲覧可。未承認ユーザーは自分の行のみ閲覧可(承認待ち状態の確認用)。
+create policy "employees_select" on public.employees
+  for select using (public.is_approved() or auth_user_id = auth.uid());
+
+-- 新規登録: 自分の auth_user_id で、role='staff' かつ approved=false の行のみ作成可(自己承認・自己昇格を防止)。
+create policy "employees_self_register" on public.employees
+  for insert with check (
+    auth_user_id = auth.uid() and role = 'staff' and approved = false
+  );
+
+-- 更新・削除は管理者のみ(承認・役割変更・時給変更など)。
+create policy "employees_admin_update" on public.employees
+  for update using (public.is_admin());
+
+create policy "employees_admin_delete" on public.employees
+  for delete using (public.is_admin());
+
+-- --- seats -------------------------------------------------------------------
+-- 承認済み従業員(admin/staff問わず)は座席の閲覧・作成・更新が可能。
+-- 「確定は管理者のみ」はアプリ側のUIで担保する(フェーズ3/4で詳細実装)。
+create policy "seats_select" on public.seats
+  for select using (public.is_approved());
+
+create policy "seats_upsert" on public.seats
+  for insert with check (public.is_approved());
+
+create policy "seats_update" on public.seats
+  for update using (public.is_approved());
+
+-- 座席の削除(行自体の削除)は管理者のみ。通常運用では status='empty' への更新のみで足りる想定。
+create policy "seats_admin_delete" on public.seats
+  for delete using (public.is_admin());
+
+-- --- shifts --------------------------------------------------------------
+-- 閲覧・作成・更新・削除: 管理者は全件、スタッフは自分の勤怠のみ。
+create policy "shifts_select" on public.shifts
+  for select using (public.is_admin() or employee_id = public.current_employee_id());
+
+create policy "shifts_insert" on public.shifts
+  for insert with check (public.is_admin() or employee_id = public.current_employee_id());
+
+create policy "shifts_update" on public.shifts
+  for update using (public.is_admin() or employee_id = public.current_employee_id());
+
+create policy "shifts_delete" on public.shifts
+  for delete using (public.is_admin() or employee_id = public.current_employee_id());
+
+-- --- products ------------------------------------------------------------
+-- 閲覧: 承認済み従業員全員。作成・更新・削除: 管理者のみ。
+create policy "products_select" on public.products
+  for select using (public.is_approved());
+
+create policy "products_admin_write" on public.products
+  for insert with check (public.is_admin());
+
+create policy "products_admin_update" on public.products
+  for update using (public.is_admin());
+
+create policy "products_admin_delete" on public.products
+  for delete using (public.is_admin());
+
+-- ============================================================================
+-- Realtime有効化(seats/shiftsの変更をリアルタイム配信)
+-- ============================================================================
+alter publication supabase_realtime add table public.seats;
+alter publication supabase_realtime add table public.shifts;
