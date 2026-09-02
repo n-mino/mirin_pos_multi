@@ -68,6 +68,19 @@ create table if not exists public.products (
 );
 
 -- ============================================================================
+-- テーブルレベルの権限付与
+-- ============================================================================
+-- プロジェクト作成時に「Automatically expose new tables」をOFFにしているため、
+-- anon/authenticatedロールにはテーブルへの基本的なアクセス権限(GRANT)が
+-- 自動付与されない。ここで明示的に付与し、実際の行ごとの制御はRLSポリシー
+-- (このファイル後半)に委ねる(Supabase標準の運用パターン)。
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.employees to anon, authenticated;
+grant select, insert, update, delete on public.seats to anon, authenticated;
+grant select, insert, update, delete on public.shifts to anon, authenticated;
+grant select, insert, update, delete on public.products to anon, authenticated;
+
+-- ============================================================================
 -- ヘルパー関数(RLSポリシーから参照)
 -- ============================================================================
 
