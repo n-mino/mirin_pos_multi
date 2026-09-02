@@ -394,6 +394,60 @@ function computeBill(seat, data) {
   return { subtotal, serviceRate, serviceCharge, taxRate, tax, total };
 }
 
+// ---- Supabase連携(複数端末対応、フェーズ1: シャドウ書き込みのみ) ----------
+// data.seats[n] の1要素をSupabaseのseatsテーブル1行の形へ変換する。
+// 読み込みは引き続き100% localStorageのため、この関数の出力は書き込み専用。
+function seatToSupabaseRow(seatNo, seat) {
+  if (!seat) {
+    return {
+      seat_no: Number(seatNo),
+      status: "empty",
+      guests: null,
+      companion_name: "",
+      companion_employee_id: null,
+      companion_kind: "",
+      start_time: null,
+      orders: [],
+      checkout_draft: null,
+      updated_at: new Date().toISOString(),
+    };
+  }
+  return {
+    seat_no: Number(seatNo),
+    status: seat.status === "awaiting_checkout" ? "awaiting_checkout" : "occupied",
+    guests: seat.guests ?? null,
+    companion_name: typeof seat.companion === "string" ? seat.companion : "",
+    companion_employee_id: seat.companionEmployeeId || null,
+    companion_kind: seat.companionKind || "",
+    start_time: seat.startTime || null,
+    orders: seat.orders || [],
+    checkout_draft: seat.checkoutDraft || null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+// oldSeats/newSeatsを比較し、変化した座席番号のみSupabaseへupsertする(シャドウ書き込み)。
+// アプリの表示・動作には一切影響しない(失敗してもconsole警告のみ、UIには出さない)。
+function shadowSyncSeatsToSupabase(oldSeats, newSeats) {
+  if (!window.supabaseClient || oldSeats === newSeats) return;
+  const seatNos = new Set([...Object.keys(oldSeats || {}), ...Object.keys(newSeats || {})]);
+  const rows = [];
+  seatNos.forEach((n) => {
+    const before = oldSeats?.[n];
+    const after = newSeats?.[n];
+    if (JSON.stringify(before) !== JSON.stringify(after)) {
+      rows.push(seatToSupabaseRow(n, after));
+    }
+  });
+  if (rows.length === 0) return;
+  window.supabaseClient
+    .from("seats")
+    .upsert(rows, { onConflict: "seat_no" })
+    .then(({ error }) => {
+      if (error) console.warn("[shadow-sync] seats upsert failed:", error.message);
+    });
+}
+
 function formatPercent(n) {
   const v = Number(n) || 0;
   return Number.isInteger(v) ? `${v}%` : `${v.toFixed(1)}%`;
@@ -3024,10 +3078,14 @@ function App() {
 
   const persist = useCallback(async (newData) => {
     try {
+      const prevSeats = dataRef.current?.seats;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
       setData(newData);
       dataRef.current = newData;
       setSaveError(false);
+      // シャドウ書き込み(フェーズ1): 読み込みは引き続き100% localStorageのまま、
+      // 座席の変更だけSupabaseにも書き込んでおき、Supabase側で正しく反映されるか検証する。
+      shadowSyncSeatsToSupabase(prevSeats, newData.seats);
     } catch (e) {
       // 容量超過(QuotaExceededError)などはここに来る
       // localStorage失敗時は state を変更しない(UIと永続化の整合性を保つ)

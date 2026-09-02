@@ -75,6 +75,7 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.114.0/dist/umd/supabase.js" crossorigin></script>
 
 <script>
   // オンライン/オフライン状態の表示
@@ -93,6 +94,11 @@
       });
     });
   }
+
+  // Supabaseクライアント(複数端末データ同期用。Publishable keyは公開して問題ない値)
+  window.SUPABASE_URL = "https://ketidzbsczlxamybkedi.supabase.co";
+  window.SUPABASE_ANON_KEY = "sb_publishable_ZaCZAhGdNn_Zq8jHRESF3A_GKVP5eX9";
+  window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 </script>
 
 <script type="text/babel" src="./app.jsx"></script>

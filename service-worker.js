@@ -1,5 +1,5 @@
 // このバージョン番号を上げると、次回オンライン時に新しいキャッシュへ切り替わる
-const CACHE_VERSION = "pos-app-cache-v72";
+const CACHE_VERSION = "pos-app-cache-v73";
 
 // アプリの動作に必要な全ファイル(App Shell)
 // CDNのReact/Babelも含めてキャッシュし、完全オフラインで起動できるようにする
@@ -17,7 +17,13 @@ const APP_SHELL = [
   "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
   "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
   "https://unpkg.com/@babel/standalone@7.24.7/babel.min.js",
+  "https://unpkg.com/@supabase/supabase-js@2.114.0/dist/umd/supabase.js",
 ];
+
+// SupabaseプロジェクトのAPIドメイン。座席等の生きたデータを配信するため、
+// 下のfetchハンドラでは常にネットワークへ直接流し、キャッシュ配信の対象から除外する
+// (supabase-jsライブラリ本体のファイル取得はunpkg経由なのでこの対象外=通常通りキャッシュされる)。
+const SUPABASE_API_HOST = "ketidzbsczlxamybkedi.supabase.co";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -57,6 +63,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   if (!event.request.url.startsWith("http")) return; // chrome-extension: 等はSWの対象外
+  if (event.request.url.includes(SUPABASE_API_HOST)) return; // Supabaseへの読み取りは常にネットワーク直行(古いキャッシュを返さない)
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
