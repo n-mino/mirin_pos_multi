@@ -2149,6 +2149,28 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
       });
   };
 
+  const demoteFromAdmin = (id) => {
+    const employees = data.payroll.employees;
+    const adminCount = employees.filter((e) => e.role === "admin").length;
+    if (adminCount <= 1) {
+      showToast("最低1人は管理者が必要です");
+      return;
+    }
+    const list = employees.map((e) => (e.id === id ? { ...e, role: "staff" } : e));
+    onUpdatePayroll({ employees: list });
+    window.supabaseClient
+      .from("employees")
+      .update({ role: "staff" })
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) {
+          console.warn("[employees] demote failed:", error.message);
+        } else {
+          showToast("管理者から外しました");
+        }
+      });
+  };
+
   const pendingEmployees = (data.payroll.employees || []).filter((e) => e.approved === false);
 
   const saveRankBonusRates = (rates) => {
@@ -2628,6 +2650,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 onEdit={(emp) => setEditingEmployee(emp)}
                 onDelete={(id) => setDeletingEmployeeId(id)}
                 onPromote={promoteToAdmin}
+                onDemote={demoteFromAdmin}
               />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
