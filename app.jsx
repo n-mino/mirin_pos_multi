@@ -3112,7 +3112,7 @@ function toSyntheticEmail(username) {
   return `${normalized}@${AUTH_EMAIL_DOMAIN}`;
 }
 
-function LoginScreen({ onLoggedIn }) {
+function LoginScreen({ onLoggedIn, onSignupStart }) {
   const [mode, setMode] = useState("login"); // "login" | "signup"
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -3134,21 +3134,12 @@ function LoginScreen({ onLoggedIn }) {
         if (err) throw err;
         onLoggedIn();
       } else {
-        const { data: signUpData, error: err } = await window.supabaseClient.auth.signUp({ email, password });
+        // 従業員行の作成は、ログイン状態への切り替わりが確定した後にApp側で行う
+        // (signUp直後だと新しいセッションのトークンがまだ反映しきっておらず、
+        //  ここでinsertするとRLSの認証チェックに失敗する競合が起きるため)。
+        const { error: err } = await window.supabaseClient.auth.signUp({ email, password });
         if (err) throw err;
-        const authUserId = signUpData?.user?.id;
-        if (!authUserId) {
-          throw new Error("アカウント作成には成功しましたが、セッションを開始できませんでした。時間をおいてログインし直してください。");
-        }
-        const { error: insertErr } = await window.supabaseClient.from("employees").insert({
-          id: uid("emp"),
-          name: displayName.trim(),
-          hourly_wage: 0,
-          role: "staff",
-          auth_user_id: authUserId,
-          approved: false,
-        });
-        if (insertErr) throw insertErr;
+        onSignupStart(displayName.trim());
         setSignedUp(true);
       }
     } catch (e) {
@@ -3280,6 +3271,7 @@ function App() {
   const [authSession, setAuthSession] = useState(undefined); // undefined=確認中 | null=未ログイン | session
   const [myEmployee, setMyEmployee] = useState(null); // ログイン中ユーザー自身のemployees行
   const dataRef = useRef(null);
+  const pendingSignupNameRef = useRef(null); // 新規登録直後、まだemployees行が無い場合の表示名の一時保管
 
   // Supabaseのログインセッション監視(フェーズ2)
   useEffect(() => {
@@ -3293,32 +3285,50 @@ function App() {
 
   // ログイン中: 自分自身のemployees行を取得し、承認済みなら全従業員一覧を
   // ローカルのdata.payroll.employeesへ同期する(既存の従業員関連UIを無改修で使うため)。
+  // 新規登録直後でまだ自分のemployees行が無い場合は、ここでinsertする
+  // (signUp直後にLoginScreen側でinsertすると、セッション切り替わりで
+  //  LoginScreenが即座にアンマウントされ、新しいトークンがまだ反映しきって
+  //  いない状態でのリクエストになりRLSの認証チェックに失敗する競合があったため)。
   useEffect(() => {
     if (!authSession?.user?.id) return;
     let cancelled = false;
-    window.supabaseClient
-      .from("employees")
-      .select("*")
-      .then(({ data: rows, error }) => {
+    (async () => {
+      let { data: rows, error } = await window.supabaseClient.from("employees").select("*");
+      if (cancelled) return;
+      if (error) {
+        console.warn("[auth] employees fetch failed:", error.message);
+        return;
+      }
+      let mine = (rows || []).find((r) => r.auth_user_id === authSession.user.id) || null;
+      if (!mine && pendingSignupNameRef.current) {
+        const name = pendingSignupNameRef.current;
+        pendingSignupNameRef.current = null;
+        const { data: inserted, error: insertErr } = await window.supabaseClient
+          .from("employees")
+          .insert({ id: uid("emp"), name, hourly_wage: 0, role: "staff", auth_user_id: authSession.user.id, approved: false })
+          .select()
+          .single();
         if (cancelled) return;
-        if (error) {
-          console.warn("[auth] employees fetch failed:", error.message);
-          return;
+        if (insertErr) {
+          console.warn("[auth] employees insert failed:", insertErr.message);
+        } else {
+          mine = inserted;
+          rows = [...(rows || []), inserted];
         }
-        const mine = (rows || []).find((r) => r.auth_user_id === authSession.user.id) || null;
-        setMyEmployee(mine);
-        if (mine?.approved && dataRef.current) {
-          const mapped = rows.map((r) => ({
-            id: r.id,
-            name: r.name,
-            hourlyWage: r.hourly_wage,
-            role: r.role,
-            approved: r.approved,
-            authUserId: r.auth_user_id,
-          }));
-          persist({ ...dataRef.current, payroll: { ...dataRef.current.payroll, employees: mapped } });
-        }
-      });
+      }
+      setMyEmployee(mine);
+      if (mine?.approved && dataRef.current) {
+        const mapped = rows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          hourlyWage: r.hourly_wage,
+          role: r.role,
+          approved: r.approved,
+          authUserId: r.auth_user_id,
+        }));
+        persist({ ...dataRef.current, payroll: { ...dataRef.current.payroll, employees: mapped } });
+      }
+    })();
     return () => { cancelled = true; };
   }, [authSession?.user?.id]);
 
@@ -3400,7 +3410,7 @@ function App() {
   }
 
   if (authSession === null) {
-    return <LoginScreen onLoggedIn={() => {}} />;
+    return <LoginScreen onLoggedIn={() => {}} onSignupStart={(name) => { pendingSignupNameRef.current = name; }} />;
   }
 
   if (!myEmployee) {
