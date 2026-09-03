@@ -135,6 +135,10 @@ create policy "employees_self_register" on public.employees
   );
 
 -- 更新・削除は管理者のみ(承認・役割変更・時給変更など)。
+-- 管理者がマスタ設定から直接従業員を追加する場合(ログインアカウント未作成の従業員)用。
+create policy "employees_admin_insert" on public.employees
+  for insert with check (public.is_admin());
+
 create policy "employees_admin_update" on public.employees
   for update using (public.is_admin());
 

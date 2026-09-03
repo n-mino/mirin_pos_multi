@@ -2035,7 +2035,7 @@ function UserGuidePanel() {
 /* ---------------------------------------------------------
    マスタ設定画面
 --------------------------------------------------------- */
-function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onUpdateSeatName, onUpdateRates, onUpdateSeatToneThresholds, onUpdatePayroll, onImportData, onImportDataPeriod, onDeleteAllData, onUpdateSecurity, onResetSecurity, showToast }) {
+function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onUpdateSeatName, onUpdateRates, onUpdateSeatToneThresholds, onUpdatePayroll, onImportData, onImportDataPeriod, onDeleteAllData, onUpdateSecurity, onResetSecurity, showToast, myEmployee, onLogout }) {
   const isNarrow = useMediaQuery("(max-width: 720px)");
   const [tab, setTab] = useState("products");
   const [editing, setEditing] = useState(null); // product being edited, or {} for new
@@ -2077,9 +2077,26 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
 
   const saveEmployee = (emp) => {
     const employees = data.payroll.employees;
-    const list = emp.id ? employees.map((e) => (e.id === emp.id ? emp : e)) : [...employees, { ...emp, id: uid("emp") }];
+    const isNew = !emp.id;
+    const finalEmp = isNew ? { ...emp, id: uid("emp"), role: "staff", approved: true } : { ...employees.find((e) => e.id === emp.id), ...emp };
+    const list = isNew ? [...employees, finalEmp] : employees.map((e) => (e.id === emp.id ? finalEmp : e));
     onUpdatePayroll({ employees: list });
     setEditingEmployee(null);
+    // Supabaseにも反映(承認済みログインアカウントを持つ従業員が別端末にもいる想定のため)。
+    // 管理者が直接追加した従業員はauth_user_id無し(ログインアカウント未作成)として扱う。
+    window.supabaseClient
+      .from("employees")
+      .upsert({
+        id: finalEmp.id,
+        name: finalEmp.name,
+        hourly_wage: finalEmp.hourlyWage,
+        role: finalEmp.role || "staff",
+        approved: finalEmp.approved ?? true,
+        auth_user_id: finalEmp.authUserId || null,
+      })
+      .then(({ error }) => {
+        if (error) console.warn("[employees] upsert failed:", error.message);
+      });
   };
 
   const deleteEmployee = (id) => {
@@ -2088,7 +2105,34 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
       shifts: data.payroll.shifts.filter((s) => s.employeeId !== id),
     });
     setDeletingEmployeeId(null);
+    // 注意: 紐づくSupabase Authアカウント(ログイン情報)自体は削除されない(既知の制限、フェーズ7で対応予定)。
+    window.supabaseClient
+      .from("employees")
+      .delete()
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) console.warn("[employees] delete failed:", error.message);
+      });
   };
+
+  const approveEmployee = (id) => {
+    const employees = data.payroll.employees;
+    const list = employees.map((e) => (e.id === id ? { ...e, approved: true } : e));
+    onUpdatePayroll({ employees: list });
+    window.supabaseClient
+      .from("employees")
+      .update({ approved: true })
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) {
+          console.warn("[employees] approve failed:", error.message);
+        } else {
+          showToast("承認しました");
+        }
+      });
+  };
+
+  const pendingEmployees = (data.payroll.employees || []).filter((e) => e.approved === false);
 
   const saveRankBonusRates = (rates) => {
     onUpdatePayroll({ rankBonusRates: rates });
@@ -2289,6 +2333,29 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
             <RefreshCw size={11} />
             {checkingUpdate ? "更新確認中…" : "アプリ更新"}
           </button>
+          {myEmployee && (
+            <>
+              <div style={{ fontSize: 11, fontFamily: MONO, color: COLORS.inkSoft, whiteSpace: "nowrap" }}>
+                {myEmployee.name}({myEmployee.role === "admin" ? "管理者" : "スタッフ"})
+              </div>
+              <button
+                onClick={onLogout}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 14,
+                  border: `1.5px solid ${COLORS.line}`,
+                  background: "transparent",
+                  color: COLORS.inkSoft,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                ログアウト
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -2521,8 +2588,25 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
         {tab === "staff" && (
           <div style={{ display: "flex", flexDirection: isNarrow ? "column" : "row", gap: 20 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
+              {pendingEmployees.length > 0 && (
+                <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>
+                    承認待ちのアカウント({pendingEmployees.length}件)
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {pendingEmployees.map((e) => (
+                      <div key={e.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, borderRadius: 8, padding: "8px 12px" }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink }}>{e.name}</span>
+                        <TicketButton variant="primary" onClick={() => approveEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
+                          承認する
+                        </TicketButton>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <EmployeeListPanel
-                employees={data.payroll.employees}
+                employees={data.payroll.employees.filter((e) => e.approved !== false)}
                 onAdd={() => setEditingEmployee({})}
                 onEdit={(emp) => setEditingEmployee(emp)}
                 onDelete={(id) => setDeletingEmployeeId(id)}
@@ -3016,6 +3100,168 @@ function HistoryDetailScreen({ sale, onBack }) {
 }
 
 /* ---------------------------------------------------------
+   ログイン・新規登録(フェーズ2: Supabase Auth)
+   ユーザーには「ユーザー名」だけを入力させ、内部的にダミーメール
+   アドレスへ変換してSupabase Authに渡す(Supabase Auth自体は
+   メール形式のIDを要求するための変換で、ユーザーに見えることはない)。
+--------------------------------------------------------- */
+const AUTH_EMAIL_DOMAIN = "mirin-pos.internal";
+
+function toSyntheticEmail(username) {
+  const normalized = String(username || "").trim().toLowerCase().replace(/[^a-z0-9_.-]/g, "");
+  return `${normalized}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+function LoginScreen({ onLoggedIn }) {
+  const [mode, setMode] = useState("login"); // "login" | "signup"
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [signedUp, setSignedUp] = useState(false);
+
+  const canSubmit = username.trim().length > 0 && password.length >= 6 && (mode === "login" || displayName.trim().length > 0);
+
+  const handleSubmit = async () => {
+    if (!canSubmit || busy) return;
+    setBusy(true);
+    setError("");
+    const email = toSyntheticEmail(username);
+    try {
+      if (mode === "login") {
+        const { error: err } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+        if (err) throw err;
+        onLoggedIn();
+      } else {
+        const { data: signUpData, error: err } = await window.supabaseClient.auth.signUp({ email, password });
+        if (err) throw err;
+        const authUserId = signUpData?.user?.id;
+        if (!authUserId) {
+          throw new Error("アカウント作成には成功しましたが、セッションを開始できませんでした。時間をおいてログインし直してください。");
+        }
+        const { error: insertErr } = await window.supabaseClient.from("employees").insert({
+          id: uid("emp"),
+          name: displayName.trim(),
+          hourly_wage: 0,
+          role: "staff",
+          auth_user_id: authUserId,
+          approved: false,
+        });
+        if (insertErr) throw insertErr;
+        setSignedUp(true);
+      }
+    } catch (e) {
+      setError(e.message || "エラーが発生しました。時間をおいて再度お試しください。");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (signedUp) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>登録リクエストを送信しました</div>
+        <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20 }}>
+          管理者が承認するまでお待ちください。承認後、同じユーザー名・パスワードでログインできます。
+        </div>
+        <TicketButton variant="secondary" onClick={() => { setSignedUp(false); setMode("login"); setPassword(""); }}>
+          ログイン画面に戻る
+        </TicketButton>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center", padding: 24, fontFamily: SANS }}>
+      <div style={{ maxWidth: 340, margin: "0 auto", width: "100%" }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.ink, textAlign: "center", marginBottom: 4 }}>店舗POS</div>
+        <div style={{ fontSize: 13, color: COLORS.inkSoft, textAlign: "center", marginBottom: 24 }}>
+          {mode === "login" ? "ログイン" : "新規登録"}
+        </div>
+
+        <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+          {[{ id: "login", label: "ログイン" }, { id: "signup", label: "新規登録" }].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => { setMode(t.id); setError(""); }}
+              style={{
+                flex: 1,
+                padding: "8px 0",
+                borderRadius: 20,
+                border: `1.5px solid ${mode === t.id ? COLORS.teal : COLORS.line}`,
+                background: mode === t.id ? COLORS.teal : "transparent",
+                color: mode === t.id ? "#FBF9F4" : COLORS.inkSoft,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>ユーザー名</div>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoCapitalize="off"
+              autoCorrect="off"
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }}
+            />
+          </div>
+          {mode === "signup" && (
+            <div>
+              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>お名前(表示名)</div>
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }}
+              />
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>パスワード(6文字以上)</div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ fontSize: 12.5, color: COLORS.brick, background: COLORS.brickBg, borderRadius: 6, padding: "8px 10px" }}>
+              {error}
+            </div>
+          )}
+
+          <TicketButton variant="primary" onClick={handleSubmit} disabled={!canSubmit || busy} style={{ width: "100%", marginTop: 4 }}>
+            {busy ? "処理中…" : mode === "login" ? "ログイン" : "登録する"}
+          </TicketButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PendingApprovalScreen({ employee, onLogout }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>承認待ちです</div>
+      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20 }}>
+        {employee?.name ? `${employee.name}さんのアカウントは、` : "アカウントは、"}
+        管理者の承認をお待ちしています。承認されるまでこの画面が表示されます。
+      </div>
+      <TicketButton variant="secondary" onClick={onLogout}>ログアウト</TicketButton>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
    ルートアプリ
 --------------------------------------------------------- */
 function App() {
@@ -3031,7 +3277,54 @@ function App() {
   const [saveError, setSaveError] = useState(false);
   const [unlockedTabs, setUnlockedTabs] = useState(() => new Set());
   const [pendingLockTab, setPendingLockTab] = useState(null);
+  const [authSession, setAuthSession] = useState(undefined); // undefined=確認中 | null=未ログイン | session
+  const [myEmployee, setMyEmployee] = useState(null); // ログイン中ユーザー自身のemployees行
   const dataRef = useRef(null);
+
+  // Supabaseのログインセッション監視(フェーズ2)
+  useEffect(() => {
+    window.supabaseClient.auth.getSession().then(({ data }) => setAuthSession(data.session));
+    const { data: sub } = window.supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setAuthSession(session);
+      if (!session) setMyEmployee(null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // ログイン中: 自分自身のemployees行を取得し、承認済みなら全従業員一覧を
+  // ローカルのdata.payroll.employeesへ同期する(既存の従業員関連UIを無改修で使うため)。
+  useEffect(() => {
+    if (!authSession?.user?.id) return;
+    let cancelled = false;
+    window.supabaseClient
+      .from("employees")
+      .select("*")
+      .then(({ data: rows, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.warn("[auth] employees fetch failed:", error.message);
+          return;
+        }
+        const mine = (rows || []).find((r) => r.auth_user_id === authSession.user.id) || null;
+        setMyEmployee(mine);
+        if (mine?.approved && dataRef.current) {
+          const mapped = rows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            hourlyWage: r.hourly_wage,
+            role: r.role,
+            approved: r.approved,
+            authUserId: r.auth_user_id,
+          }));
+          persist({ ...dataRef.current, payroll: { ...dataRef.current.payroll, employees: mapped } });
+        }
+      });
+    return () => { cancelled = true; };
+  }, [authSession?.user?.id]);
+
+  const handleLogout = () => {
+    window.supabaseClient.auth.signOut();
+  };
 
   // 初期読み込み(localStorage / オフライン対応)
   useEffect(() => {
@@ -3098,12 +3391,28 @@ function App() {
     setTimeout(() => setToast(""), 2200);
   };
 
-  if (loading || !data) {
+  if (loading || !data || authSession === undefined) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: COLORS.inkSoft, fontFamily: SANS }}>
         読み込み中...
       </div>
     );
+  }
+
+  if (authSession === null) {
+    return <LoginScreen onLoggedIn={() => {}} />;
+  }
+
+  if (!myEmployee) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: COLORS.inkSoft, fontFamily: SANS }}>
+        読み込み中...
+      </div>
+    );
+  }
+
+  if (!myEmployee.approved) {
+    return <PendingApprovalScreen employee={myEmployee} onLogout={handleLogout} />;
   }
 
   const goToHomeTab = (tab) => {
@@ -3327,6 +3636,8 @@ function App() {
           onUpdateSecurity={onUpdateSecurity}
           onResetSecurity={onResetSecurity}
           showToast={showToast}
+          myEmployee={myEmployee}
+          onLogout={handleLogout}
         />
       )}
 
