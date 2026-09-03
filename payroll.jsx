@@ -205,7 +205,7 @@ function TimeStepSelect({ value, onChange }) {
 /* ---------------------------------------------------------
    アルバイト管理
 --------------------------------------------------------- */
-function EmployeeListPanel({ employees, onAdd, onEdit, onDelete }) {
+function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote }) {
   return (
     <>
       <TicketButton variant="primary" onClick={onAdd} icon={Plus} style={{ marginBottom: 16 }}>
@@ -231,10 +231,22 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete }) {
               }}
             >
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>{emp.name}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>{emp.name}</span>
+                  {emp.role === "admin" && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.teal, border: `1px solid ${COLORS.teal}`, borderRadius: 4, padding: "1px 5px" }}>
+                      管理者
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 12, color: COLORS.inkSoft, fontFamily: MONO }}>時給 {formatYen(emp.hourlyWage)}</div>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
+                {onPromote && emp.role !== "admin" && (
+                  <button onClick={() => onPromote(emp.id)} style={{ ...payrollIconBtnStyle, width: "auto", padding: "0 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                    管理者にする
+                  </button>
+                )}
                 <button onClick={() => onEdit(emp)} style={payrollIconBtnStyle}>
                   <Pencil size={14} />
                 </button>

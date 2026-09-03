@@ -2132,6 +2132,23 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
       });
   };
 
+  const promoteToAdmin = (id) => {
+    const employees = data.payroll.employees;
+    const list = employees.map((e) => (e.id === id ? { ...e, role: "admin" } : e));
+    onUpdatePayroll({ employees: list });
+    window.supabaseClient
+      .from("employees")
+      .update({ role: "admin" })
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) {
+          console.warn("[employees] promote failed:", error.message);
+        } else {
+          showToast("管理者にしました");
+        }
+      });
+  };
+
   const pendingEmployees = (data.payroll.employees || []).filter((e) => e.approved === false);
 
   const saveRankBonusRates = (rates) => {
@@ -2610,6 +2627,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 onAdd={() => setEditingEmployee({})}
                 onEdit={(emp) => setEditingEmployee(emp)}
                 onDelete={(id) => setDeletingEmployeeId(id)}
+                onPromote={promoteToAdmin}
               />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
