@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 18:19";
+const APP_LAST_UPDATED = "2026/09/04 18:49";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -875,7 +875,7 @@ function Toast({ message }) {
 /* ---------------------------------------------------------
    トップ画面(座席一覧)
 --------------------------------------------------------- */
-function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout }) {
+function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout, myEmployee }) {
   const todayTotal = data.salesHistory
     .filter((s) => isToday(s.endTime))
     .reduce((sum, s) => sum + s.total, 0);
@@ -888,26 +888,33 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
       <Header
         title="座席一覧"
         right={
-          role === "admin" ? (
-            <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />
-          ) : (
-            <button
-              onClick={onLogout}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 14,
-                border: "1.5px solid rgba(255,255,255,0.35)",
-                background: "transparent",
-                color: "#FBF9F4",
-                fontSize: 12,
-                fontWeight: 700,
-                whiteSpace: "nowrap",
-                cursor: "pointer",
-              }}
-            >
-              ログアウト
-            </button>
-          )
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {myEmployee && (
+              <span style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap" }}>
+                {myEmployee.name}（{myEmployee.role === "admin" ? "管理者" : "スタッフ"}）
+              </span>
+            )}
+            {role === "admin" ? (
+              <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />
+            ) : (
+              <button
+                onClick={onLogout}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 14,
+                  border: "1.5px solid rgba(255,255,255,0.35)",
+                  background: "transparent",
+                  color: "#FBF9F4",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                ログアウト
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -3563,22 +3570,30 @@ function App() {
   // 承認済みになったら、まずSupabaseの座席全件を取得してローカルに反映し(この端末が
   // 開いていなかった間に他端末で行われた変更を取り込む)、その後はRealtime購読で
   // 他端末の変更を継続的に取り込む(フェーズ3)。
+  // スマホのスリープ/バックグラウンド移行等でWebSocket接続が一時的に切れると、
+  // 切断中に起きた他端末の変更を取りこぼす可能性があるため、①再接続(SUBSCRIBED)時、
+  // ②タブが再び表示された時、の両方で再取得して取りこぼしを回復する。
   useEffect(() => {
     if (!myEmployee?.approved) return;
     let cancelled = false;
-    window.supabaseClient
-      .from("seats")
-      .select("*")
-      .then(({ data: rows, error }) => {
-        if (cancelled || error || !dataRef.current) {
-          if (error) console.warn("[seats-sync] initial fetch failed:", error.message);
-          return;
-        }
-        const merged = mergeSeatsRows(dataRef.current, rows || []);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-        dataRef.current = merged;
-        setData(merged);
-      });
+
+    const fetchSeats = () => {
+      window.supabaseClient
+        .from("seats")
+        .select("*")
+        .then(({ data: rows, error }) => {
+          if (cancelled || error || !dataRef.current) {
+            if (error) console.warn("[seats-sync] fetch failed:", error.message);
+            return;
+          }
+          const merged = mergeSeatsRows(dataRef.current, rows || []);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          dataRef.current = merged;
+          setData(merged);
+        });
+    };
+
+    fetchSeats();
 
     const channel = window.supabaseClient
       .channel("seats-changes")
@@ -3591,39 +3606,52 @@ function App() {
         dataRef.current = merged;
         setData(merged);
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") fetchSeats();
+      });
+
+    const onVisible = () => { if (document.visibilityState === "visible") fetchSeats(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
 
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
       window.supabaseClient.removeChannel(channel);
     };
   }, [myEmployee?.approved]);
 
   // 商品マスタも座席と同様に、初回一括取得+Realtime購読で他端末(特にサブ端末)へ
-  // 売り切れ状態などの変更を伝える(フェーズ4)。
+  // 売り切れ状態などの変更を伝える(フェーズ4)。再接続時・タブ復帰時の再取得も同様。
   useEffect(() => {
     if (!myEmployee?.approved) return;
     let cancelled = false;
-    window.supabaseClient
-      .from("products")
-      .select("*")
-      .then(({ data: rows, error }) => {
-        if (cancelled || error || !dataRef.current) {
-          if (error) console.warn("[products-sync] initial fetch failed:", error.message);
-          return;
-        }
-        if (!rows || rows.length === 0) {
-          // Supabase側がまだ空(初回)の場合、管理者のローカル商品一覧を初期データとして流し込む。
-          if (myEmployee?.role === "admin" && dataRef.current.products?.length > 0) {
-            syncProductsToSupabase([], dataRef.current.products);
+
+    const fetchProducts = () => {
+      window.supabaseClient
+        .from("products")
+        .select("*")
+        .then(({ data: rows, error }) => {
+          if (cancelled || error || !dataRef.current) {
+            if (error) console.warn("[products-sync] fetch failed:", error.message);
+            return;
           }
-          return;
-        }
-        const merged = { ...dataRef.current, products: rows.map(supabaseRowToProduct) };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-        dataRef.current = merged;
-        setData(merged);
-      });
+          if (!rows || rows.length === 0) {
+            // Supabase側がまだ空(初回)の場合、管理者のローカル商品一覧を初期データとして流し込む。
+            if (myEmployee?.role === "admin" && dataRef.current.products?.length > 0) {
+              syncProductsToSupabase([], dataRef.current.products);
+            }
+            return;
+          }
+          const merged = { ...dataRef.current, products: rows.map(supabaseRowToProduct) };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          dataRef.current = merged;
+          setData(merged);
+        });
+    };
+
+    fetchProducts();
 
     const channel = window.supabaseClient
       .channel("products-changes")
@@ -3644,10 +3672,18 @@ function App() {
         dataRef.current = merged;
         setData(merged);
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") fetchProducts();
+      });
+
+    const onVisible = () => { if (document.visibilityState === "visible") fetchProducts(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
 
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
       window.supabaseClient.removeChannel(channel);
     };
   }, [myEmployee?.approved]);
@@ -3686,6 +3722,18 @@ function App() {
     const t = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(t);
   }, []);
+
+  // 注文画面/会計画面を開いたまま、他端末(主にメイン端末)がその座席を
+  // 会計確定・取り消しして座席データ自体が消えた場合、この端末は真っ白な
+  // 画面のまま操作不能になってしまう(該当するscreen分岐が一つも一致しなく
+  // なるため)。座席が消えたことを検知したら座席一覧へ自動的に戻す。
+  useEffect(() => {
+    if ((screen === "order" || screen === "checkout") && activeSeat != null && !data?.seats?.[activeSeat]) {
+      setScreen("top");
+      setActiveSeat(null);
+      showToast(`座席${activeSeat} の会計が完了しました`);
+    }
+  }, [data?.seats, activeSeat, screen]);
 
   // ブラウザの戻る/進むボタン対策。画面遷移はReact内部のstateのみで行い
   // ブラウザ履歴(URL)は使わない構成のため、戻る操作でアプリ自体から
@@ -3930,6 +3978,7 @@ function App() {
           onSelectHomeTab={handleSelectHomeTab}
           role={myEmployee?.role}
           onLogout={handleLogout}
+          myEmployee={myEmployee}
         />
       )}
 
