@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 17:02";
+const APP_LAST_UPDATED = "2026/09/04 17:33";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -479,6 +479,53 @@ function mergeSeatsRows(baseData, rows) {
     }
   });
   return { ...baseData, seats: newSeats };
+}
+
+// ---- 商品マスタのSupabase同期(座席と同じ考え方) --------------------------
+function productToSupabaseRow(p) {
+  return {
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    category: p.category || "",
+    sold_out: !!p.soldOut,
+    bottle_back: !!p.bottleBack,
+    time_price: p.timePrice || null,
+  };
+}
+
+function supabaseRowToProduct(row) {
+  const p = { id: row.id, name: row.name, price: row.price, category: row.category || "" };
+  if (row.sold_out) p.soldOut = true;
+  if (row.bottle_back) p.bottleBack = true;
+  if (row.time_price) p.timePrice = row.time_price;
+  return p;
+}
+
+// oldProducts/newProducts(配列)を比較し、変化した商品だけSupabaseへupsert、
+// 削除された商品だけdeleteする(管理者の書き込みを他端末へ伝える経路)。
+function syncProductsToSupabase(oldProducts, newProducts) {
+  if (!window.supabaseClient || oldProducts === newProducts) return;
+  const oldById = new Map((oldProducts || []).map((p) => [p.id, p]));
+  const newById = new Map((newProducts || []).map((p) => [p.id, p]));
+  const upserts = [];
+  newById.forEach((p, id) => {
+    if (JSON.stringify(oldById.get(id)) !== JSON.stringify(p)) upserts.push(productToSupabaseRow(p));
+  });
+  const deletedIds = [...oldById.keys()].filter((id) => !newById.has(id));
+  if (upserts.length > 0) {
+    window.supabaseClient
+      .from("products")
+      .upsert(upserts, { onConflict: "id" })
+      .then(({ error }) => { if (error) console.warn("[products-sync] upsert failed:", error.message); });
+  }
+  if (deletedIds.length > 0) {
+    window.supabaseClient
+      .from("products")
+      .delete()
+      .in("id", deletedIds)
+      .then(({ error }) => { if (error) console.warn("[products-sync] delete failed:", error.message); });
+  }
 }
 
 function formatPercent(n) {
@@ -769,10 +816,12 @@ const HOME_TABS = [
   { id: "payroll", label: "アルバイト管理" },
 ];
 
-function HomeTabBar({ active, onSelect }) {
+function HomeTabBar({ active, onSelect, role }) {
+  // フェーズ4時点ではスタッフは座席一覧のみ(アルバイト管理は勤怠入力対応のフェーズ5で再度表示する)。
+  const tabs = role === "admin" ? HOME_TABS : HOME_TABS.filter((t) => t.id === "seats");
   return (
     <div style={{ display: "flex", gap: 6, padding: "12px 20px", borderBottom: `1px solid ${COLORS.line}`, background: COLORS.paper, overflowX: "auto" }}>
-      {HOME_TABS.map((t) => (
+      {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onSelect(t.id)}
@@ -826,7 +875,7 @@ function Toast({ message }) {
 /* ---------------------------------------------------------
    トップ画面(座席一覧)
 --------------------------------------------------------- */
-function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab }) {
+function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role }) {
   const todayTotal = data.salesHistory
     .filter((s) => isToday(s.endTime))
     .reduce((sum, s) => sum + s.total, 0);
@@ -838,28 +887,30 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header
         title="座席一覧"
-        right={<HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />}
+        right={role === "admin" ? <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" /> : null}
       />
 
-      <HomeTabBar active={activeHomeTab} onSelect={onSelectHomeTab} />
+      <HomeTabBar active={activeHomeTab} onSelect={onSelectHomeTab} role={role} />
 
-      <div
-        style={{
-          padding: "10px 20px",
-          display: "flex",
-          gap: 20,
-          alignItems: "center",
-          fontFamily: MONO,
-          fontSize: 13,
-          fontWeight: 700,
-          color: COLORS.inkSoft,
-          borderBottom: `1px dashed ${COLORS.line}`,
-          background: COLORS.paper,
-        }}
-      >
-        <span>本日 会計 {todayCount}件</span>
-        <span>売上 {formatYen(todayTotal)}</span>
-      </div>
+      {role === "admin" && (
+        <div
+          style={{
+            padding: "10px 20px",
+            display: "flex",
+            gap: 20,
+            alignItems: "center",
+            fontFamily: MONO,
+            fontSize: 13,
+            fontWeight: 700,
+            color: COLORS.inkSoft,
+            borderBottom: `1px dashed ${COLORS.line}`,
+            background: COLORS.paper,
+          }}
+        >
+          <span>本日 会計 {todayCount}件</span>
+          <span>売上 {formatYen(todayTotal)}</span>
+        </div>
+      )}
 
       <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
         <div
@@ -1643,6 +1694,78 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm }) {
           会計を確定して座席を空ける
         </TicketButton>
       </div>
+    </div>
+  );
+}
+
+// サブ端末(アルバイト)向けの会計確認画面。明細のみ表示し、支払い方法の入力・
+// 確定は行わない(確定は必ずメイン端末のCheckoutScreenで行う)。
+// 「会計を依頼する」を押すと座席を"awaiting_checkout"にするだけで、
+// salesHistoryへの書き込み・座席の解放は一切発生しない。
+function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPreview }) {
+  const bill = computeBill(seat, data);
+  const { subtotal, serviceRate, serviceCharge, taxRate, tax, total } = bill;
+  const alreadySubmitted = seat.status === "awaiting_checkout";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Header title={`会計確認 - ${seatDisplayLabel(seatNum, data.seatNames?.[seatNum])}`} onBack={onBack} />
+
+      <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+        <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
+            <span>{seat.guests}名 ・ 滞在 {formatElapsed(seat.startTime, now)}</span>
+          </div>
+          {seat.orders.map((o) => (
+            <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13.5 }}>
+              <span style={{ color: COLORS.ink }}>{o.name} <span style={{ color: COLORS.inkSoft }}>× {o.qty}</span></span>
+              <span style={{ fontFamily: MONO, color: COLORS.ink }}>{formatYen(o.price * o.qty)}</span>
+            </div>
+          ))}
+
+          <div style={{ borderTop: `1px dashed ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+              <span>小計</span>
+              <span style={{ fontFamily: MONO }}>{formatYen(subtotal)}</span>
+            </div>
+            {serviceRate > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+                <span>サービス料（{formatPercent(serviceRate)}）</span>
+                <span style={{ fontFamily: MONO }}>{formatYen(serviceCharge)}</span>
+              </div>
+            )}
+            {taxRate > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+                <span>消費税（{formatPercent(taxRate)}）</span>
+                <span style={{ fontFamily: MONO }}>{formatYen(tax)}</span>
+              </div>
+            )}
+          </div>
+
+          <div style={{ borderTop: `1px solid ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontWeight: 700, color: COLORS.ink }}>合計</span>
+            <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
+          </div>
+        </div>
+
+        {alreadySubmitted && (
+          <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, fontSize: 13, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
+            会計待ちです。スタッフ(管理者)が確定するまでお待ちください。
+          </div>
+        )}
+      </div>
+
+      {!alreadySubmitted && (
+        <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper }}>
+          <TicketButton
+            variant="primary"
+            onClick={() => onSubmitPreview(bill)}
+            style={{ width: "100%", padding: "14px 18px" }}
+          >
+            会計を依頼する
+          </TicketButton>
+        </div>
+      )}
     </div>
   );
 }
@@ -3455,6 +3578,59 @@ function App() {
     };
   }, [myEmployee?.approved]);
 
+  // 商品マスタも座席と同様に、初回一括取得+Realtime購読で他端末(特にサブ端末)へ
+  // 売り切れ状態などの変更を伝える(フェーズ4)。
+  useEffect(() => {
+    if (!myEmployee?.approved) return;
+    let cancelled = false;
+    window.supabaseClient
+      .from("products")
+      .select("*")
+      .then(({ data: rows, error }) => {
+        if (cancelled || error || !dataRef.current) {
+          if (error) console.warn("[products-sync] initial fetch failed:", error.message);
+          return;
+        }
+        if (!rows || rows.length === 0) {
+          // Supabase側がまだ空(初回)の場合、管理者のローカル商品一覧を初期データとして流し込む。
+          if (myEmployee?.role === "admin" && dataRef.current.products?.length > 0) {
+            syncProductsToSupabase([], dataRef.current.products);
+          }
+          return;
+        }
+        const merged = { ...dataRef.current, products: rows.map(supabaseRowToProduct) };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        dataRef.current = merged;
+        setData(merged);
+      });
+
+    const channel = window.supabaseClient
+      .channel("products-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, (payload) => {
+        if (!dataRef.current) return;
+        const products = [...dataRef.current.products];
+        if (payload.eventType === "DELETE") {
+          const idx = products.findIndex((p) => p.id === payload.old.id);
+          if (idx >= 0) products.splice(idx, 1);
+        } else {
+          const mapped = supabaseRowToProduct(payload.new);
+          const idx = products.findIndex((p) => p.id === mapped.id);
+          if (idx >= 0) products[idx] = mapped;
+          else products.push(mapped);
+        }
+        const merged = { ...dataRef.current, products };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        dataRef.current = merged;
+        setData(merged);
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      window.supabaseClient.removeChannel(channel);
+    };
+  }, [myEmployee?.approved]);
+
   const handleLogout = () => {
     window.supabaseClient.auth.signOut();
   };
@@ -3505,12 +3681,14 @@ function App() {
   const persist = useCallback(async (newData) => {
     try {
       const prevSeats = dataRef.current?.seats;
+      const prevProducts = dataRef.current?.products;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
       setData(newData);
       dataRef.current = newData;
       setSaveError(false);
-      // 座席の変更をSupabaseへ書き込み、他端末にリアルタイムで伝える。
+      // 座席・商品マスタの変更をSupabaseへ書き込み、他端末にリアルタイムで伝える。
       syncSeatsToSupabase(prevSeats, newData.seats);
+      syncProductsToSupabase(prevProducts, newData.products);
     } catch (e) {
       // 容量超過(QuotaExceededError)などはここに来る
       // localStorage失敗時は state を変更しない(UIと永続化の整合性を保つ)
@@ -3553,6 +3731,10 @@ function App() {
   };
 
   const handleSelectHomeTab = (tab) => {
+    // スタッフ端末は売上管理タブに到達不可(念のためのサーバーとは別の防御。
+    // UI上もHomeTabBar/role制御で既にタブ自体を表示していない)。
+    // フェーズ4時点ではスタッフが到達できるのは座席一覧のみ(アルバイト管理はフェーズ5で解禁)。
+    if (tab !== "seats" && myEmployee?.role !== "admin") return;
     const security = data.security;
     if (SECURITY_SCREEN_ORDER.includes(tab) && security.enabled[tab]) {
       const needsCheck = security.lockMode === "always" || !unlockedTabs.has(tab);
@@ -3725,6 +3907,7 @@ function App() {
           onOpenSettings={() => setScreen("settings")}
           activeHomeTab={homeTab}
           onSelectHomeTab={handleSelectHomeTab}
+          role={myEmployee?.role}
         />
       )}
 
@@ -3743,17 +3926,28 @@ function App() {
       )}
 
       {screen === "checkout" && seat && (
-        <CheckoutScreen
-          seatNum={activeSeat}
-          seat={seat}
-          data={data}
-          now={now}
-          onBack={() => setScreen("order")}
-          onConfirm={handleCheckoutConfirm}
-        />
+        myEmployee?.role === "admin" ? (
+          <CheckoutScreen
+            seatNum={activeSeat}
+            seat={seat}
+            data={data}
+            now={now}
+            onBack={() => { setScreen(seat.status === "awaiting_checkout" ? "top" : "order"); if (seat.status === "awaiting_checkout") setActiveSeat(null); }}
+            onConfirm={handleCheckoutConfirm}
+          />
+        ) : (
+          <CheckoutPreviewScreen
+            seatNum={activeSeat}
+            seat={seat}
+            data={data}
+            now={now}
+            onBack={() => { setScreen(seat.status === "awaiting_checkout" ? "top" : "order"); if (seat.status === "awaiting_checkout") setActiveSeat(null); }}
+            onSubmitPreview={(bill) => { handleSubmitCheckoutPreview(activeSeat, bill); setScreen("top"); setActiveSeat(null); showToast(`座席${activeSeat} 会計を依頼しました`); }}
+          />
+        )
       )}
 
-      {screen === "settings" && (
+      {screen === "settings" && myEmployee?.role === "admin" && (
         <SettingsScreen
           data={data}
           onBack={() => setScreen(homeTab === "seats" ? "top" : homeTab)}
@@ -3785,7 +3979,7 @@ function App() {
         />
       )}
 
-      {screen === "salesManagement" && (
+      {screen === "salesManagement" && myEmployee?.role === "admin" && (
         <SalesManagementScreen
           data={data}
           onUpdateCashFlow={onUpdateCashFlow}
@@ -3796,7 +3990,7 @@ function App() {
         />
       )}
 
-      {screen === "payroll" && (
+      {screen === "payroll" && myEmployee?.role === "admin" && (
         <PayrollScreen
           payroll={data.payroll}
           salesHistory={data.salesHistory}
@@ -3805,6 +3999,7 @@ function App() {
           activeHomeTab={homeTab}
           onSelectHomeTab={handleSelectHomeTab}
           showToast={showToast}
+          myEmployee={myEmployee}
         />
       )}
 
