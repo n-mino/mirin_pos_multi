@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 17:33";
+const APP_LAST_UPDATED = "2026/09/04 18:19";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -875,7 +875,7 @@ function Toast({ message }) {
 /* ---------------------------------------------------------
    トップ画面(座席一覧)
 --------------------------------------------------------- */
-function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role }) {
+function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout }) {
   const todayTotal = data.salesHistory
     .filter((s) => isToday(s.endTime))
     .reduce((sum, s) => sum + s.total, 0);
@@ -887,7 +887,28 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header
         title="座席一覧"
-        right={role === "admin" ? <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" /> : null}
+        right={
+          role === "admin" ? (
+            <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />
+          ) : (
+            <button
+              onClick={onLogout}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 14,
+                border: "1.5px solid rgba(255,255,255,0.35)",
+                background: "transparent",
+                color: "#FBF9F4",
+                fontSize: 12,
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
+              ログアウト
+            </button>
+          )
+        }
       />
 
       <HomeTabBar active={activeHomeTab} onSelect={onSelectHomeTab} role={role} />
@@ -3908,6 +3929,7 @@ function App() {
           activeHomeTab={homeTab}
           onSelectHomeTab={handleSelectHomeTab}
           role={myEmployee?.role}
+          onLogout={handleLogout}
         />
       )}
 
