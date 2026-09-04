@@ -176,6 +176,8 @@ const COLORS = {
   amberBg: "#F7ECD8",
   brick: "#B54834",
   brickBg: "#F6E1DB",
+  slate: "#3D5A73",
+  slateBg: "#DCE6ED",
   line: "#DCD4C4",
 };
 
@@ -193,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 16:53";
+const APP_LAST_UPDATED = "2026/09/04 17:02";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -394,9 +396,8 @@ function computeBill(seat, data) {
   return { subtotal, serviceRate, serviceCharge, taxRate, tax, total };
 }
 
-// ---- Supabase連携(複数端末対応、フェーズ1: シャドウ書き込みのみ) ----------
-// data.seats[n] の1要素をSupabaseのseatsテーブル1行の形へ変換する。
-// 読み込みは引き続き100% localStorageのため、この関数の出力は書き込み専用。
+// ---- Supabase連携(複数端末対応) --------------------------------------
+// data.seats[n] の1要素をSupabaseのseatsテーブル1行の形へ変換する(書き込み用)。
 function seatToSupabaseRow(seatNo, seat) {
   if (!seat) {
     return {
@@ -426,9 +427,10 @@ function seatToSupabaseRow(seatNo, seat) {
   };
 }
 
-// oldSeats/newSeatsを比較し、変化した座席番号のみSupabaseへupsertする(シャドウ書き込み)。
-// アプリの表示・動作には一切影響しない(失敗してもconsole警告のみ、UIには出さない)。
-function shadowSyncSeatsToSupabase(oldSeats, newSeats) {
+// oldSeats/newSeatsを比較し、変化した座席番号のみSupabaseへupsertする。
+// この端末で行った座席の変更を他端末へ伝えるための書き込み経路(失敗時はconsole警告のみ、
+// この端末自体の表示・動作は継続する。あくまでSupabaseへの反映が遅れる/失敗するだけ)。
+function syncSeatsToSupabase(oldSeats, newSeats) {
   if (!window.supabaseClient || oldSeats === newSeats) return;
   const seatNos = new Set([...Object.keys(oldSeats || {}), ...Object.keys(newSeats || {})]);
   const rows = [];
@@ -444,8 +446,39 @@ function shadowSyncSeatsToSupabase(oldSeats, newSeats) {
     .from("seats")
     .upsert(rows, { onConflict: "seat_no" })
     .then(({ error }) => {
-      if (error) console.warn("[shadow-sync] seats upsert failed:", error.message);
+      if (error) console.warn("[seats-sync] upsert failed:", error.message);
     });
+}
+
+// Supabaseのseats行1件を、ローカルのdata.seats[n]の形へ変換する(読み込み用)。
+// status:"empty"の場合はnullを返す(呼び出し側でdata.seatsからキーごと削除する)。
+function supabaseRowToSeat(row) {
+  if (!row || row.status === "empty") return null;
+  return {
+    status: row.status === "awaiting_checkout" ? "awaiting_checkout" : "occupied",
+    guests: row.guests,
+    companion: row.companion_name || "",
+    companionEmployeeId: row.companion_employee_id || null,
+    companionKind: row.companion_kind || "",
+    startTime: row.start_time,
+    orders: row.orders || [],
+    checkoutDraft: row.checkout_draft || null,
+  };
+}
+
+// Supabaseから受信したseats行群を、他端末の変更として現在のdataへマージする
+// (この端末発の書き込みではないため、syncSeatsToSupabaseへは書き戻さない)。
+function mergeSeatsRows(baseData, rows) {
+  const newSeats = { ...baseData.seats };
+  rows.forEach((row) => {
+    const seat = supabaseRowToSeat(row);
+    if (seat) {
+      newSeats[row.seat_no] = seat;
+    } else {
+      delete newSeats[row.seat_no];
+    }
+  });
+  return { ...baseData, seats: newSeats };
 }
 
 function formatPercent(n) {
@@ -839,8 +872,13 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
           {seatNums.map((n) => {
             const seat = data.seats[n];
             const occupied = !!seat;
+            const awaitingCheckout = occupied && seat.status === "awaiting_checkout";
             const mins = occupied ? elapsedMinutes(seat.startTime, now) : 0;
-            const tone = occupied ? seatTone(mins, data.seatToneThresholds) : { fg: COLORS.inkSoft, bg: COLORS.paper };
+            const tone = awaitingCheckout
+              ? { fg: COLORS.slate, bg: COLORS.slateBg }
+              : occupied
+              ? seatTone(mins, data.seatToneThresholds)
+              : { fg: COLORS.inkSoft, bg: COLORS.paper };
             const total = occupied ? seatOrderTotal(seat) : 0;
             const seatName = data.seatNames?.[n];
 
@@ -890,7 +928,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
                   {occupied && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       <span style={{ fontSize: 12, fontFamily: MONO, color: tone.fg, fontWeight: 700 }}>
-                        ● 使用中
+                        {awaitingCheckout ? "● 会計待ち" : "● 使用中"}
                       </span>
                       {companionLabel(seat.companion) && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
@@ -3378,6 +3416,45 @@ function App() {
     return () => { cancelled = true; };
   }, [authSession?.user?.id]);
 
+  // 承認済みになったら、まずSupabaseの座席全件を取得してローカルに反映し(この端末が
+  // 開いていなかった間に他端末で行われた変更を取り込む)、その後はRealtime購読で
+  // 他端末の変更を継続的に取り込む(フェーズ3)。
+  useEffect(() => {
+    if (!myEmployee?.approved) return;
+    let cancelled = false;
+    window.supabaseClient
+      .from("seats")
+      .select("*")
+      .then(({ data: rows, error }) => {
+        if (cancelled || error || !dataRef.current) {
+          if (error) console.warn("[seats-sync] initial fetch failed:", error.message);
+          return;
+        }
+        const merged = mergeSeatsRows(dataRef.current, rows || []);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        dataRef.current = merged;
+        setData(merged);
+      });
+
+    const channel = window.supabaseClient
+      .channel("seats-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "seats" }, (payload) => {
+        if (!dataRef.current) return;
+        const row = payload.eventType === "DELETE" ? payload.old : payload.new;
+        if (!row) return;
+        const merged = mergeSeatsRows(dataRef.current, [row]);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        dataRef.current = merged;
+        setData(merged);
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      window.supabaseClient.removeChannel(channel);
+    };
+  }, [myEmployee?.approved]);
+
   const handleLogout = () => {
     window.supabaseClient.auth.signOut();
   };
@@ -3432,9 +3509,8 @@ function App() {
       setData(newData);
       dataRef.current = newData;
       setSaveError(false);
-      // シャドウ書き込み(フェーズ1): 読み込みは引き続き100% localStorageのまま、
-      // 座席の変更だけSupabaseにも書き込んでおき、Supabase側で正しく反映されるか検証する。
-      shadowSyncSeatsToSupabase(prevSeats, newData.seats);
+      // 座席の変更をSupabaseへ書き込み、他端末にリアルタイムで伝える。
+      syncSeatsToSupabase(prevSeats, newData.seats);
     } catch (e) {
       // 容量超過(QuotaExceededError)などはここに来る
       // localStorage失敗時は state を変更しない(UIと永続化の整合性を保つ)
@@ -3526,7 +3602,8 @@ function App() {
     const seat = data.seats[n];
     if (seat) {
       setActiveSeat(n);
-      setScreen("order");
+      // 会計待ち(サブ端末からの申請済み)の座席は、注文編集ではなく会計確定画面に直接進む。
+      setScreen(seat.status === "awaiting_checkout" ? "checkout" : "order");
     } else {
       setGuestModalSeat(n);
     }
@@ -3544,6 +3621,7 @@ function App() {
     const newSeats = {
       ...dataRef.current.seats,
       [n]: {
+        status: "occupied",
         guests: count,
         companion: companion || "",
         companionKind: companion ? companionKind : "",
@@ -3571,6 +3649,16 @@ function App() {
     setActiveSeat(null);
     setScreen("top");
     showToast(`座席${n} を取り消しました`);
+  };
+
+  // サブ端末(スタッフ)が会計へ進んだ際、確定はせず「会計待ち」にするだけの申請。
+  // salesHistoryへの書き込み・座席の解放は一切行わない(確定はメイン端末の
+  // handleCheckoutConfirmのみが行う)。フェーズ4のサブ端末画面から呼び出す想定。
+  const handleSubmitCheckoutPreview = (n, bill) => {
+    const seat = dataRef.current.seats[n];
+    if (!seat) return;
+    const newSeats = { ...dataRef.current.seats, [n]: { ...seat, status: "awaiting_checkout", checkoutDraft: bill } };
+    persist({ ...dataRef.current, seats: newSeats });
   };
 
   const handleCheckoutConfirm = (payments, bill, memo) => {
