@@ -67,6 +67,24 @@ create table if not exists public.products (
   time_price jsonb
 );
 
+-- ----------------------------------------------------------------------------
+-- shop_settings: 座席数・座席名・色分け閾値・税/サービス料率・ランク別加算額・
+-- 売上バック率(店舗全体で1行のみの設定値。id=1固定)。
+-- 売上履歴・入出金・パスワード設定は当面タブレット(管理者端末)のみで完結する
+-- 想定のため対象外(将来的に必要になれば追加する)。
+-- ----------------------------------------------------------------------------
+create table if not exists public.shop_settings (
+  id integer primary key default 1,
+  seat_count integer not null default 5,
+  seat_names jsonb not null default '{}'::jsonb,
+  seat_tone_thresholds jsonb not null default '{"warnMinutes":30,"dangerMinutes":60}'::jsonb,
+  service_charge_rate numeric not null default 0,
+  tax_rate numeric not null default 10,
+  rank_bonus_rates jsonb not null default '{"call":100,"companion":200,"other":0}'::jsonb,
+  sales_back_rates jsonb not null default '{"over30k":10,"group5over50k":30,"bottle":10,"roundMode":"floor"}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 -- ============================================================================
 -- テーブルレベルの権限付与
 -- ============================================================================
@@ -79,6 +97,7 @@ grant select, insert, update, delete on public.employees to anon, authenticated;
 grant select, insert, update, delete on public.seats to anon, authenticated;
 grant select, insert, update, delete on public.shifts to anon, authenticated;
 grant select, insert, update, delete on public.products to anon, authenticated;
+grant select, insert, update, delete on public.shop_settings to anon, authenticated;
 
 -- ============================================================================
 -- ヘルパー関数(RLSポリシーから参照)
@@ -189,8 +208,22 @@ create policy "products_admin_update" on public.products
 create policy "products_admin_delete" on public.products
   for delete using (public.is_admin());
 
+-- --- shop_settings ---------------------------------------------------------
+-- 閲覧: 承認済み従業員全員。作成・更新: 管理者のみ(1行のみのテーブルのため削除は用意しない)。
+alter table public.shop_settings enable row level security;
+
+create policy "shop_settings_select" on public.shop_settings
+  for select using (public.is_approved());
+
+create policy "shop_settings_admin_insert" on public.shop_settings
+  for insert with check (public.is_admin());
+
+create policy "shop_settings_admin_update" on public.shop_settings
+  for update using (public.is_admin());
+
 -- ============================================================================
--- Realtime有効化(seats/shiftsの変更をリアルタイム配信)
+-- Realtime有効化(seats/shifts/shop_settingsの変更をリアルタイム配信)
 -- ============================================================================
 alter publication supabase_realtime add table public.seats;
 alter publication supabase_realtime add table public.shifts;
+alter publication supabase_realtime add table public.shop_settings;

@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 18:49";
+const APP_LAST_UPDATED = "2026/09/04 19:07";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -526,6 +526,60 @@ function syncProductsToSupabase(oldProducts, newProducts) {
       .in("id", deletedIds)
       .then(({ error }) => { if (error) console.warn("[products-sync] delete failed:", error.message); });
   }
+}
+
+// ---- 各種マスタ(座席設定・税/サービス料・ランク別加算額・売上バック率)の
+// Supabase同期。売上履歴・入出金・パスワード設定は対象外(タブレットのみで完結)。
+function shopSettingsRelevantSlice(data) {
+  return JSON.stringify({
+    seatCount: data.seatCount,
+    seatNames: data.seatNames,
+    seatToneThresholds: data.seatToneThresholds,
+    serviceChargeRate: data.serviceChargeRate,
+    taxRate: data.taxRate,
+    rankBonusRates: data.payroll?.rankBonusRates,
+    salesBackRates: data.payroll?.salesBackRates,
+  });
+}
+
+function shopSettingsToRow(data) {
+  return {
+    id: 1,
+    seat_count: data.seatCount,
+    seat_names: data.seatNames || {},
+    seat_tone_thresholds: data.seatToneThresholds || { warnMinutes: 30, dangerMinutes: 60 },
+    service_charge_rate: data.serviceChargeRate || 0,
+    tax_rate: data.taxRate || 0,
+    rank_bonus_rates: data.payroll?.rankBonusRates || {},
+    sales_back_rates: data.payroll?.salesBackRates || {},
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function applyShopSettingsRow(baseData, row) {
+  if (!row) return baseData;
+  return {
+    ...baseData,
+    seatCount: row.seat_count ?? baseData.seatCount,
+    seatNames: row.seat_names || baseData.seatNames,
+    seatToneThresholds: row.seat_tone_thresholds || baseData.seatToneThresholds,
+    serviceChargeRate: row.service_charge_rate ?? baseData.serviceChargeRate,
+    taxRate: row.tax_rate ?? baseData.taxRate,
+    payroll: {
+      ...baseData.payroll,
+      rankBonusRates: row.rank_bonus_rates || baseData.payroll.rankBonusRates,
+      salesBackRates: row.sales_back_rates || baseData.payroll.salesBackRates,
+    },
+  };
+}
+
+function syncShopSettingsToSupabase(oldData, newData) {
+  if (!window.supabaseClient || !oldData) return;
+  if (shopSettingsRelevantSlice(oldData) === shopSettingsRelevantSlice(newData)) return;
+  window.supabaseClient
+    .from("shop_settings")
+    .upsert(shopSettingsToRow(newData), { onConflict: "id" })
+    .then(({ error }) => { if (error) console.warn("[shop-settings-sync] upsert failed:", error.message); });
 }
 
 function formatPercent(n) {
@@ -891,7 +945,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {myEmployee && (
               <span style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap" }}>
-                {myEmployee.name}（{myEmployee.role === "admin" ? "管理者" : "スタッフ"}）
+                {myEmployee.name}{myEmployee.role === "admin" ? "（管理者）" : ""}
               </span>
             )}
             {role === "admin" ? (
@@ -1778,7 +1832,7 @@ function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPrevi
 
         {alreadySubmitted && (
           <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, fontSize: 13, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
-            会計待ちです。スタッフ(管理者)が確定するまでお待ちください。
+            会計待ちです。管理者が確定するまでお待ちください。
           </div>
         )}
       </div>
@@ -3688,6 +3742,65 @@ function App() {
     };
   }, [myEmployee?.approved]);
 
+  // 各種マスタ(座席数・座席名・色分け閾値・税/サービス料・ランク別加算額・売上バック率)も
+  // 座席・商品と同様にSupabaseへ同期する。タブレットで変更した設定がスタッフのスマホにも
+  // すぐ反映され、会計プレビューの金額表示などがズレないようにするため。
+  useEffect(() => {
+    if (!myEmployee?.approved) return;
+    let cancelled = false;
+
+    const fetchShopSettings = () => {
+      window.supabaseClient
+        .from("shop_settings")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle()
+        .then(({ data: row, error }) => {
+          if (cancelled || error || !dataRef.current) {
+            if (error) console.warn("[shop-settings-sync] fetch failed:", error.message);
+            return;
+          }
+          if (!row) {
+            // Supabase側がまだ未作成(初回)の場合、管理者のローカル設定を初期データとして流し込む。
+            if (myEmployee?.role === "admin") {
+              syncShopSettingsToSupabase({}, dataRef.current);
+            }
+            return;
+          }
+          const merged = applyShopSettingsRow(dataRef.current, row);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          dataRef.current = merged;
+          setData(merged);
+        });
+    };
+
+    fetchShopSettings();
+
+    const channel = window.supabaseClient
+      .channel("shop-settings-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "shop_settings" }, (payload) => {
+        if (!dataRef.current || payload.eventType === "DELETE") return;
+        const merged = applyShopSettingsRow(dataRef.current, payload.new);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        dataRef.current = merged;
+        setData(merged);
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") fetchShopSettings();
+      });
+
+    const onVisible = () => { if (document.visibilityState === "visible") fetchShopSettings(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.supabaseClient.removeChannel(channel);
+    };
+  }, [myEmployee?.approved]);
+
   const handleLogout = () => {
     window.supabaseClient.auth.signOut();
   };
@@ -3723,6 +3836,33 @@ function App() {
     return () => clearInterval(t);
   }, []);
 
+  // アプリの自動更新チェック(全端末共通)。マスタ設定の「アプリ更新」ボタンは
+  // 管理者専用かつ手動だが、スタッフ端末は設定画面自体に到達できず、更新が
+  // 出ても気づく手段が無い。ここでは①定期的にService Workerへ更新確認を
+  // 指示し(ブラウザは通常ページ遷移時にしか自動確認しないため)、②新しい
+  // バージョンが実際に制御を引き継いだ(controllerchange)タイミングで、
+  // 役割を問わず自動的にページを再読み込みする。
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    const onControllerChange = () => {
+      showToast("新しいバージョンに更新します…");
+      setTimeout(() => window.location.reload(), 1200);
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+
+    const checkForUpdate = () => {
+      navigator.serviceWorker.getRegistration().then((reg) => reg && reg.update().catch(() => {}));
+    };
+    checkForUpdate();
+    const t = setInterval(checkForUpdate, 5 * 60 * 1000); // 5分毎
+
+    return () => {
+      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      clearInterval(t);
+    };
+  }, []);
+
   // 注文画面/会計画面を開いたまま、他端末(主にメイン端末)がその座席を
   // 会計確定・取り消しして座席データ自体が消えた場合、この端末は真っ白な
   // 画面のまま操作不能になってしまう(該当するscreen分岐が一つも一致しなく
@@ -3749,15 +3889,15 @@ function App() {
 
   const persist = useCallback(async (newData) => {
     try {
-      const prevSeats = dataRef.current?.seats;
-      const prevProducts = dataRef.current?.products;
+      const prevData = dataRef.current;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
       setData(newData);
       dataRef.current = newData;
       setSaveError(false);
-      // 座席・商品マスタの変更をSupabaseへ書き込み、他端末にリアルタイムで伝える。
-      syncSeatsToSupabase(prevSeats, newData.seats);
-      syncProductsToSupabase(prevProducts, newData.products);
+      // 座席・商品マスタ・各種設定の変更をSupabaseへ書き込み、他端末にリアルタイムで伝える。
+      syncSeatsToSupabase(prevData?.seats, newData.seats);
+      syncProductsToSupabase(prevData?.products, newData.products);
+      syncShopSettingsToSupabase(prevData, newData);
     } catch (e) {
       // 容量超過(QuotaExceededError)などはここに来る
       // localStorage失敗時は state を変更しない(UIと永続化の整合性を保つ)
