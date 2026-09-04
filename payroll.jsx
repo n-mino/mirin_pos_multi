@@ -205,7 +205,7 @@ function TimeStepSelect({ value, onChange }) {
 /* ---------------------------------------------------------
    アルバイト管理
 --------------------------------------------------------- */
-function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDemote }) {
+function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDemote, currentEmployeeId }) {
   return (
     <>
       <TicketButton variant="primary" onClick={onAdd} icon={Plus} style={{ marginBottom: 16 }}>
@@ -247,7 +247,7 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDe
                     管理者にする
                   </button>
                 )}
-                {onDemote && emp.role === "admin" && (
+                {onDemote && emp.role === "admin" && emp.id !== currentEmployeeId && (
                   <button onClick={() => onDemote(emp.id)} style={{ ...payrollIconBtnStyle, width: "auto", padding: "0 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
                     管理者から外す
                   </button>

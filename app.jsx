@@ -2150,6 +2150,10 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
   };
 
   const demoteFromAdmin = (id) => {
+    if (id === myEmployee?.id) {
+      showToast("自分自身は管理者から外せません。他の管理者に依頼してください。");
+      return;
+    }
     const employees = data.payroll.employees;
     const adminCount = employees.filter((e) => e.role === "admin").length;
     if (adminCount <= 1) {
@@ -2651,6 +2655,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 onDelete={(id) => setDeletingEmployeeId(id)}
                 onPromote={promoteToAdmin}
                 onDemote={demoteFromAdmin}
+                currentEmployeeId={myEmployee?.id}
               />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
