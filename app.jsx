@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 21:29";
+const APP_LAST_UPDATED = "2026/09/04 22:04";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -582,6 +582,63 @@ function syncShopSettingsToSupabase(oldData, newData) {
     .then(({ error }) => { if (error) console.warn("[shop-settings-sync] upsert failed:", error.message); });
 }
 
+// ---- 勤怠(shifts)のSupabase同期(商品マスタと同じ配列ベースの考え方) --------
+function shiftToSupabaseRow(s) {
+  return {
+    id: s.id,
+    employee_id: s.employeeId,
+    date: s.date,
+    start_time: s.startTime,
+    end_time: s.endTime,
+    rank_key: s.rankKey || "",
+    daily_wage: s.dailyWage || 0,
+    option: s.option || 0,
+    option2: s.option2 || 0,
+    note: s.note || "",
+    paid_date: s.paidDate || null,
+  };
+}
+
+function supabaseRowToShift(row) {
+  return {
+    id: row.id,
+    employeeId: row.employee_id,
+    date: row.date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    rankKey: row.rank_key || "",
+    dailyWage: row.daily_wage || 0,
+    option: row.option || 0,
+    option2: row.option2 || 0,
+    note: row.note || "",
+    paidDate: row.paid_date || "",
+  };
+}
+
+function syncShiftsToSupabase(oldShifts, newShifts) {
+  if (!window.supabaseClient || oldShifts === newShifts) return;
+  const oldById = new Map((oldShifts || []).map((s) => [s.id, s]));
+  const newById = new Map((newShifts || []).map((s) => [s.id, s]));
+  const upserts = [];
+  newById.forEach((s, id) => {
+    if (JSON.stringify(oldById.get(id)) !== JSON.stringify(s)) upserts.push(shiftToSupabaseRow(s));
+  });
+  const deletedIds = [...oldById.keys()].filter((id) => !newById.has(id));
+  if (upserts.length > 0) {
+    window.supabaseClient
+      .from("shifts")
+      .upsert(upserts, { onConflict: "id" })
+      .then(({ error }) => { if (error) console.warn("[shifts-sync] upsert failed:", error.message); });
+  }
+  if (deletedIds.length > 0) {
+    window.supabaseClient
+      .from("shifts")
+      .delete()
+      .in("id", deletedIds)
+      .then(({ error }) => { if (error) console.warn("[shifts-sync] delete failed:", error.message); });
+  }
+}
+
 function formatPercent(n) {
   const v = Number(n) || 0;
   return Number.isInteger(v) ? `${v}%` : `${v.toFixed(1)}%`;
@@ -871,8 +928,8 @@ const HOME_TABS = [
 ];
 
 function HomeTabBar({ active, onSelect, role }) {
-  // フェーズ4時点ではスタッフは座席一覧のみ(アルバイト管理は勤怠入力対応のフェーズ5で再度表示する)。
-  const tabs = role === "admin" ? HOME_TABS : HOME_TABS.filter((t) => t.id === "seats");
+  // スタッフは座席一覧と勤怠管理(自分の勤怠のみ)にアクセス可能。売上管理は管理者専用。
+  const tabs = role === "admin" ? HOME_TABS : HOME_TABS.filter((t) => t.id === "seats" || t.id === "payroll");
   return (
     <div style={{ display: "flex", gap: 6, padding: "12px 20px", borderBottom: `1px solid ${COLORS.line}`, background: COLORS.paper, overflowX: "auto" }}>
       {tabs.map((t) => (
@@ -2321,7 +2378,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
   const saveEmployee = (emp) => {
     const employees = data.payroll.employees;
     const isNew = !emp.id;
-    const finalEmp = isNew ? { ...emp, id: uid("emp"), role: "staff", approved: true } : { ...employees.find((e) => e.id === emp.id), ...emp };
+    const finalEmp = isNew ? { ...emp, id: uid("emp"), role: "staff", approved: true, active: true } : { ...employees.find((e) => e.id === emp.id), ...emp };
     const list = isNew ? [...employees, finalEmp] : employees.map((e) => (e.id === emp.id ? finalEmp : e));
     onUpdatePayroll({ employees: list });
     setEditingEmployee(null);
@@ -2335,6 +2392,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
         hourly_wage: finalEmp.hourlyWage,
         role: finalEmp.role || "staff",
         approved: finalEmp.approved ?? true,
+        active: finalEmp.active ?? true,
         auth_user_id: finalEmp.authUserId || null,
       })
       .then(({ error }) => {
@@ -2342,12 +2400,27 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
       });
   };
 
+  // 勤怠実績が既にある従業員は、削除すると氏名の参照先が失われ過去の勤怠データが
+  // 読み取れなくなってしまう(労務・税務上の記録保存の観点でも望ましくない)ため、
+  // 物理削除ではなく active:false による「退職済み」への無効化を行う。
+  // 勤怠実績が無い従業員(登録ミスなど)は今まで通り完全に削除できる。
   const deleteEmployee = (id) => {
-    onUpdatePayroll({
-      employees: data.payroll.employees.filter((e) => e.id !== id),
-      shifts: data.payroll.shifts.filter((s) => s.employeeId !== id),
-    });
+    const hasShifts = data.payroll.shifts.some((s) => s.employeeId === id);
     setDeletingEmployeeId(null);
+    if (hasShifts) {
+      const list = data.payroll.employees.map((e) => (e.id === id ? { ...e, active: false } : e));
+      onUpdatePayroll({ employees: list });
+      window.supabaseClient
+        .from("employees")
+        .update({ active: false })
+        .eq("id", id)
+        .then(({ error }) => {
+          if (error) console.warn("[employees] archive failed:", error.message);
+        });
+      showToast("退職済みにしました");
+      return;
+    }
+    onUpdatePayroll({ employees: data.payroll.employees.filter((e) => e.id !== id) });
     // 注意: 紐づくSupabase Authアカウント(ログイン情報)自体は削除されない(既知の制限、フェーズ7で対応予定)。
     window.supabaseClient
       .from("employees")
@@ -2355,6 +2428,22 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
       .eq("id", id)
       .then(({ error }) => {
         if (error) console.warn("[employees] delete failed:", error.message);
+      });
+  };
+
+  const reactivateEmployee = (id) => {
+    const list = data.payroll.employees.map((e) => (e.id === id ? { ...e, active: true } : e));
+    onUpdatePayroll({ employees: list });
+    window.supabaseClient
+      .from("employees")
+      .update({ active: true })
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) {
+          console.warn("[employees] reactivate failed:", error.message);
+        } else {
+          showToast("復帰させました");
+        }
       });
   };
 
@@ -2892,7 +2981,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 </div>
               )}
               <EmployeeListPanel
-                employees={data.payroll.employees.filter((e) => e.approved !== false)}
+                employees={data.payroll.employees.filter((e) => e.approved !== false && e.active !== false)}
                 onAdd={() => setEditingEmployee({})}
                 onEdit={(emp) => setEditingEmployee(emp)}
                 onDelete={(id) => setDeletingEmployeeId(id)}
@@ -2900,6 +2989,21 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 onDemote={demoteFromAdmin}
                 currentEmployeeId={myEmployee?.id}
               />
+              {data.payroll.employees.some((e) => e.active === false) && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 8 }}>退職済み</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {data.payroll.employees.filter((e) => e.active === false).map((e) => (
+                      <div key={e.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", opacity: 0.7 }}>
+                        <span style={{ fontSize: 13.5, color: COLORS.inkSoft }}>{e.name}</span>
+                        <TicketButton variant="secondary" onClick={() => reactivateEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
+                          復帰させる
+                        </TicketButton>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               {!isNarrow && (
@@ -3170,19 +3274,22 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
         />
       )}
 
-      {deletingEmployee && (
-        <ConfirmModal
-          title="アルバイトを削除しますか？"
-          message={
-            data.payroll.shifts.some((s) => s.employeeId === deletingEmployee.id)
-              ? `${deletingEmployee.name} を削除すると、紐づく勤怠記録も削除されます。この操作は元に戻せません。`
-              : `${deletingEmployee.name} を削除します。よろしいですか？`
-          }
-          confirmLabel="削除する"
-          onCancel={() => setDeletingEmployeeId(null)}
-          onConfirm={() => deleteEmployee(deletingEmployee.id)}
-        />
-      )}
+      {deletingEmployee && (() => {
+        const hasShifts = data.payroll.shifts.some((s) => s.employeeId === deletingEmployee.id);
+        return (
+          <ConfirmModal
+            title={hasShifts ? "退職済みにしますか？" : "アルバイトを削除しますか？"}
+            message={
+              hasShifts
+                ? `${deletingEmployee.name} には勤怠記録があるため、削除ではなく「退職済み」として無効化します(勤怠記録は残ります。新規の勤怠入力・同伴担当者の選択肢からは外れます。後から復帰させることもできます)。`
+                : `${deletingEmployee.name} を削除します。この操作は元に戻せません。`
+            }
+            confirmLabel={hasShifts ? "退職済みにする" : "削除する"}
+            onCancel={() => setDeletingEmployeeId(null)}
+            onConfirm={() => deleteEmployee(deletingEmployee.id)}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -3620,6 +3727,7 @@ function App() {
           hourlyWage: r.hourly_wage,
           role: r.role,
           approved: r.approved,
+          active: r.active ?? true,
           authUserId: r.auth_user_id,
         }));
         persist({ ...dataRef.current, payroll: { ...dataRef.current.payroll, employees: mapped } });
@@ -3643,7 +3751,7 @@ function App() {
           if (idx >= 0) employees.splice(idx, 1);
         } else {
           const r = payload.new;
-          const mapped = { id: r.id, name: r.name, hourlyWage: r.hourly_wage, role: r.role, approved: r.approved, authUserId: r.auth_user_id };
+          const mapped = { id: r.id, name: r.name, hourlyWage: r.hourly_wage, role: r.role, approved: r.approved, active: r.active ?? true, authUserId: r.auth_user_id };
           const idx = employees.findIndex((e) => e.id === mapped.id);
           if (idx >= 0) employees[idx] = mapped;
           else employees.push(mapped);
@@ -3840,6 +3948,66 @@ function App() {
     };
   }, [myEmployee?.approved]);
 
+  // 勤怠(shifts)も座席・商品と同様に、初回一括取得+Realtime購読で同期する(フェーズ5)。
+  // RLSにより、管理者は全件、スタッフは自分の分のみが返るため、クライアント側で
+  // 役割による絞り込みを行う必要はない(サーバー側で既に絞られた結果が返る)。
+  useEffect(() => {
+    if (!myEmployee?.approved) return;
+    let cancelled = false;
+
+    const fetchShifts = () => {
+      window.supabaseClient
+        .from("shifts")
+        .select("*")
+        .then(({ data: rows, error }) => {
+          if (cancelled || error || !dataRef.current) {
+            if (error) console.warn("[shifts-sync] fetch failed:", error.message);
+            return;
+          }
+          const merged = { ...dataRef.current, payroll: { ...dataRef.current.payroll, shifts: (rows || []).map(supabaseRowToShift) } };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          dataRef.current = merged;
+          setData(merged);
+        });
+    };
+
+    fetchShifts();
+
+    const channel = window.supabaseClient
+      .channel("shifts-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "shifts" }, (payload) => {
+        if (!dataRef.current) return;
+        const shifts = [...(dataRef.current.payroll.shifts || [])];
+        if (payload.eventType === "DELETE") {
+          const idx = shifts.findIndex((s) => s.id === payload.old.id);
+          if (idx >= 0) shifts.splice(idx, 1);
+        } else {
+          const mapped = supabaseRowToShift(payload.new);
+          const idx = shifts.findIndex((s) => s.id === mapped.id);
+          if (idx >= 0) shifts[idx] = mapped;
+          else shifts.push(mapped);
+        }
+        const merged = { ...dataRef.current, payroll: { ...dataRef.current.payroll, shifts } };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        dataRef.current = merged;
+        setData(merged);
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") fetchShifts();
+      });
+
+    const onVisible = () => { if (document.visibilityState === "visible") fetchShifts(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.supabaseClient.removeChannel(channel);
+    };
+  }, [myEmployee?.approved]);
+
   // ログイン済みなのに自分のemployees行がなかなか取得できない場合の保険。
   // 何らかの不具合や通信エラーで無限に「読み込み中…」のまま止まってしまうと
   // ユーザーには真っ白な画面に見えてしまうため、一定時間で諦めて再読み込みを促す。
@@ -3949,6 +4117,7 @@ function App() {
       syncSeatsToSupabase(prevData?.seats, newData.seats);
       syncProductsToSupabase(prevData?.products, newData.products);
       syncShopSettingsToSupabase(prevData, newData);
+      syncShiftsToSupabase(prevData?.payroll?.shifts, newData.payroll?.shifts);
     } catch (e) {
       // 容量超過(QuotaExceededError)などはここに来る
       // localStorage失敗時は state を変更しない(UIと永続化の整合性を保つ)
@@ -4002,10 +4171,9 @@ function App() {
   };
 
   const handleSelectHomeTab = (tab) => {
-    // スタッフ端末は売上管理タブに到達不可(念のためのサーバーとは別の防御。
-    // UI上もHomeTabBar/role制御で既にタブ自体を表示していない)。
-    // フェーズ4時点ではスタッフが到達できるのは座席一覧のみ(アルバイト管理はフェーズ5で解禁)。
-    if (tab !== "seats" && myEmployee?.role !== "admin") return;
+    // スタッフ端末は座席一覧・勤怠管理のみ到達可能、売上管理は管理者専用
+    // (念のためのサーバーとは別の防御。UI上もHomeTabBar/role制御で既にタブ自体を表示していない)。
+    if (tab === "salesManagement" && myEmployee?.role !== "admin") return;
     const security = data.security;
     if (SECURITY_SCREEN_ORDER.includes(tab) && security.enabled[tab]) {
       const needsCheck = security.lockMode === "always" || !unlockedTabs.has(tab);
@@ -4263,7 +4431,7 @@ function App() {
         />
       )}
 
-      {screen === "payroll" && myEmployee?.role === "admin" && (
+      {screen === "payroll" && (
         <PayrollScreen
           payroll={data.payroll}
           salesHistory={data.salesHistory}
@@ -4273,6 +4441,7 @@ function App() {
           onSelectHomeTab={handleSelectHomeTab}
           showToast={showToast}
           myEmployee={myEmployee}
+          onLogout={handleLogout}
         />
       )}
 
@@ -4297,7 +4466,7 @@ function App() {
       })()}
 
       {guestModalSeat !== null && (
-        <GuestCountModal seatNum={guestModalSeat} employees={data.payroll?.employees || []} onConfirm={handleConfirmGuests} onCancel={() => setGuestModalSeat(null)} />
+        <GuestCountModal seatNum={guestModalSeat} employees={(data.payroll?.employees || []).filter((e) => e.active !== false)} onConfirm={handleConfirmGuests} onCancel={() => setGuestModalSeat(null)} />
       )}
 
       {pendingLockTab && (

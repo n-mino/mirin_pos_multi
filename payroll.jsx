@@ -420,9 +420,9 @@ function SalesBackRateSettingsPanel({ salesBackRates, onSave }) {
 /* ---------------------------------------------------------
    勤怠入力
 --------------------------------------------------------- */
-function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit }) {
+function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit, lockedEmployeeId }) {
   const blank = () => ({
-    employeeId: employees[0]?.id || "",
+    employeeId: lockedEmployeeId || employees.find((e) => e.active !== false)?.id || employees[0]?.id || "",
     date: toDateInputValue(new Date().toISOString()),
     startTime: "",
     endTime: "",
@@ -505,11 +505,20 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
         <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={{ fontSize: 12, color: COLORS.inkSoft }}>従業員</label>
-            <select value={form.employeeId} onChange={(e) => setField("employeeId", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }}>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>{emp.name}</option>
-              ))}
-            </select>
+            {lockedEmployeeId ? (
+              <div style={{ ...payrollFieldInputStyle, fontFamily: MONO, display: "flex", alignItems: "center", background: COLORS.bg, color: COLORS.ink }}>
+                {employees.find((e) => e.id === lockedEmployeeId)?.name || ""}
+              </div>
+            ) : (
+              <select value={form.employeeId} onChange={(e) => setField("employeeId", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }}>
+                {/* 退職済み(active:false)は新規選択肢としては出さないが、編集中の勤怠が
+                    退職済みの従業員に紐づいている場合は表示を維持する(選択肢から消えて
+                    別人に付け替わってしまうのを防ぐため)。 */}
+                {employees.filter((emp) => emp.active !== false || emp.id === form.employeeId).map((emp) => (
+                  <option key={emp.id} value={emp.id}>{emp.name}{emp.active === false ? "(退職済み)" : ""}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
@@ -680,21 +689,27 @@ function SalesBackBreakdownCard({ salesHistory, employees, dateMode, dateValue, 
   );
 }
 
-function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdit, onDelete, onTogglePaid }) {
-  const [viewMode, setViewMode] = useState("all"); // individual | all
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(employees[0]?.id || "");
+function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdit, onDelete, onTogglePaid, lockedEmployeeId, isAdmin = true }) {
+  const [viewMode, setViewMode] = useState(lockedEmployeeId ? "individual" : "all"); // individual | all
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(lockedEmployeeId || employees[0]?.id || "");
   const [dateMode, setDateMode] = useState("today"); // today | all | date
   const [dateValue, setDateValue] = useState(toDateInputValue(new Date().toISOString()));
   const [deletingShiftId, setDeletingShiftId] = useState(null);
 
   useEffect(() => {
+    if (lockedEmployeeId) {
+      setSelectedEmployeeId(lockedEmployeeId);
+      return;
+    }
     if (!employees.some((e) => e.id === selectedEmployeeId)) {
       setSelectedEmployeeId(employees[0]?.id || "");
     }
-  }, [employees]);
+  }, [employees, lockedEmployeeId]);
 
   let list = shifts.slice();
-  if (viewMode === "individual") {
+  if (lockedEmployeeId) {
+    list = list.filter((s) => s.employeeId === lockedEmployeeId);
+  } else if (viewMode === "individual") {
     list = list.filter((s) => s.employeeId === selectedEmployeeId);
   }
   list = list.filter((s) => {
@@ -730,10 +745,12 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => setViewMode("individual")} style={payrollPillStyle(viewMode === "individual")}>個別</button>
-          <button onClick={() => setViewMode("all")} style={payrollPillStyle(viewMode === "all")}>全員一括</button>
-        </div>
+        {!lockedEmployeeId && (
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={() => setViewMode("individual")} style={payrollPillStyle(viewMode === "individual")}>個別</button>
+            <button onClick={() => setViewMode("all")} style={payrollPillStyle(viewMode === "all")}>全員一括</button>
+          </div>
+        )}
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={() => setDateMode("today")} style={payrollPillStyle(dateMode === "today")}>本日のみ</button>
           <button onClick={() => setDateMode("all")} style={payrollPillStyle(dateMode === "all")}>すべて</button>
@@ -757,7 +774,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
             style={{ border: "none", background: "transparent", fontFamily: MONO, fontSize: 13, color: COLORS.ink }}
           />
         </div>
-        {viewMode === "individual" && employees.length > 0 && (
+        {!lockedEmployeeId && viewMode === "individual" && employees.length > 0 && (
           <select value={selectedEmployeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)} style={payrollSelectStyle}>
             {employees.map((emp) => (
               <option key={emp.id} value={emp.id}>{emp.name}</option>
@@ -859,20 +876,37 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                   }}
                 >
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button
-                      onClick={() => onTogglePaid(shift.id)}
-                      title={shift.paidDate ? "支払い済みを解除" : "支払い済みにする"}
-                      style={{
-                        ...payrollIconBtnStyle,
-                        width: 26,
-                        height: 26,
-                        background: shift.paidDate ? COLORS.sage : "transparent",
-                        border: `1px solid ${shift.paidDate ? COLORS.sage : COLORS.line}`,
-                        color: shift.paidDate ? COLORS.paper : COLORS.inkSoft,
-                      }}
-                    >
-                      <Banknote size={12} />
-                    </button>
+                    {isAdmin ? (
+                      <button
+                        onClick={() => onTogglePaid(shift.id)}
+                        title={shift.paidDate ? "支払い済みを解除" : "支払い済みにする"}
+                        style={{
+                          ...payrollIconBtnStyle,
+                          width: 26,
+                          height: 26,
+                          background: shift.paidDate ? COLORS.sage : "transparent",
+                          border: `1px solid ${shift.paidDate ? COLORS.sage : COLORS.line}`,
+                          color: shift.paidDate ? COLORS.paper : COLORS.inkSoft,
+                        }}
+                      >
+                        <Banknote size={12} />
+                      </button>
+                    ) : (
+                      <div
+                        title={shift.paidDate ? "支払い済み" : "支払い未定(管理者のみ変更可)"}
+                        style={{
+                          ...payrollIconBtnStyle,
+                          width: 26,
+                          height: 26,
+                          background: shift.paidDate ? COLORS.sage : "transparent",
+                          border: `1px solid ${shift.paidDate ? COLORS.sage : COLORS.line}`,
+                          color: shift.paidDate ? COLORS.paper : COLORS.inkSoft,
+                          cursor: "default",
+                        }}
+                      >
+                        <Banknote size={12} />
+                      </div>
+                    )}
                     <button onClick={() => onEdit(shift.id)} style={{ ...payrollIconBtnStyle, width: 26, height: 26 }}>
                       <Pencil size={12} />
                     </button>
@@ -1166,7 +1200,9 @@ const PAYROLL_TABS = [
   { id: "agg", label: "集計" },
 ];
 
-function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings, activeHomeTab, onSelectHomeTab, showToast }) {
+function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings, activeHomeTab, onSelectHomeTab, showToast, myEmployee, onLogout }) {
+  const isAdmin = myEmployee?.role === "admin";
+  const visibleTabs = isAdmin ? PAYROLL_TABS : PAYROLL_TABS.filter((t) => t.id !== "agg");
   const [tab, setTab] = useState(PAYROLL_TABS[0].id);
   const [editingShiftId, setEditingShiftId] = useState(null);
 
@@ -1204,13 +1240,41 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header
         title="勤怠管理"
-        right={<HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />}
+        right={
+          isAdmin ? (
+            <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {myEmployee && (
+                <span style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap" }}>
+                  {myEmployee.name}
+                </span>
+              )}
+              <button
+                onClick={onLogout}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 14,
+                  border: "1.5px solid rgba(255,255,255,0.35)",
+                  background: "transparent",
+                  color: "#FBF9F4",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                ログアウト
+              </button>
+            </div>
+          )
+        }
       />
 
-      <HomeTabBar active={activeHomeTab} onSelect={onSelectHomeTab} />
+      <HomeTabBar active={activeHomeTab} onSelect={onSelectHomeTab} role={myEmployee?.role} />
 
       <div style={{ display: "flex", gap: 6, padding: "12px 20px", borderBottom: `1px solid ${COLORS.line}`, background: COLORS.paper, overflowX: "auto" }}>
-        {PAYROLL_TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} style={payrollPillStyle(tab === t.id)}>
             {t.label}
           </button>
@@ -1225,6 +1289,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
             editingShift={editingShift}
             onSave={saveShift}
             onCancelEdit={() => { setEditingShiftId(null); setTab("list"); }}
+            lockedEmployeeId={isAdmin ? null : myEmployee?.id}
           />
         )}
         {tab === "list" && (
@@ -1236,9 +1301,11 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
             onEdit={(id) => { setEditingShiftId(id); setTab("entry"); }}
             onDelete={deleteShift}
             onTogglePaid={togglePaidDate}
+            lockedEmployeeId={isAdmin ? null : myEmployee?.id}
+            isAdmin={isAdmin}
           />
         )}
-        {tab === "agg" && <AggregationPanel employees={employees} shifts={shifts} rankBonusRates={rankBonusRates} />}
+        {tab === "agg" && isAdmin && <AggregationPanel employees={employees} shifts={shifts} rankBonusRates={rankBonusRates} />}
       </div>
     </div>
   );
