@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 19:07";
+const APP_LAST_UPDATED = "2026/09/04 21:29";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -256,7 +256,7 @@ function verifyPassword(enteredRaw, storedEncoded) {
 }
 
 const SECURITY_SCREEN_ORDER = ["salesManagement", "payroll"];
-const SECURITY_SCREEN_LABELS = { salesManagement: "売上管理", payroll: "アルバイト管理" };
+const SECURITY_SCREEN_LABELS = { salesManagement: "売上管理", payroll: "勤怠管理" };
 const SECURITY_RESET_KEYWORD = "09044249596";
 const SETTINGS_ADMIN_PASSWORD = "mrn"; // 「パスワード設定」タブ・JSON書き出しを保護する固定パスワード
 
@@ -867,7 +867,7 @@ function HeaderIconButton({ icon: Icon, onClick, title }) {
 const HOME_TABS = [
   { id: "seats", label: "座席一覧" },
   { id: "salesManagement", label: "売上管理" },
-  { id: "payroll", label: "アルバイト管理" },
+  { id: "payroll", label: "勤怠管理" },
 ];
 
 function HomeTabBar({ active, onSelect, role }) {
@@ -2211,7 +2211,7 @@ function UserGuidePanel() {
           日付ごとに、レジからの出金(仕入れなど)・入金(釣銭準備金など)を「摘要」「金額」で記録します。「+項目追加」で行を増やせます。
         </GuideItem>
         <GuideItem label="日次集計">
-          指定した日の総売上(現金+カード+PayPay+売掛)・人件費(アルバイト管理の勤怠から自動計算)・出金/入金・残金(現金-人件費-出金+入金)をまとめて確認できます。その日の売上履歴・勤怠一覧(それぞれ件数・合計額つき)もあわせて表示されますが、編集はできません(編集は各専用画面で行ってください)。
+          指定した日の総売上(現金+カード+PayPay+売掛)・人件費(勤怠管理の勤怠から自動計算)・出金/入金・残金(現金-人件費-出金+入金)をまとめて確認できます。その日の売上履歴・勤怠一覧(それぞれ件数・合計額つき)もあわせて表示されますが、編集はできません(編集は各専用画面で行ってください)。
         </GuideItem>
         <GuideItem label="集計グラフ">
           支払い方法(現金・カード・PayPay・売掛)別の売上を、日毎または月毎の積み上げグラフで確認できます。期間中の合計人数の推移も折れ線で重ねて表示されます。
@@ -2221,7 +2221,7 @@ function UserGuidePanel() {
         </GuideItem>
       </GuideSection>
 
-      <GuideSection title="③ アルバイト管理">
+      <GuideSection title="③ 勤怠管理">
         <GuideItem label="勤怠入力">
           従業員・日付・開始/終了時刻(15分単位)を入力して記録します。「ランク」で「呼込み/同伴/その他」のいずれかを選ぶと、アルバイトマスタで設定した金額がその勤務日の時給に1時間あたり加算されます(選び直す・もう一度押して解除することもできます。複数は同時に選べません)。「同伴」を選ぶと「同伴バック」欄に金額(¥3,000)が自動入力されます(必要に応じて手動で変更できます)。「呼込み」「その他」を選ぶ、または「同伴」を解除すると、自動入力された同伴バックの金額はクリアされます。「同伴バック」「売上バック」は勤務時間に関係なく加算される金額です。日給を入力した場合は、時給×時間の計算より日給が優先されます(ランク・バックはそのまま加算されます)。同じ従業員・同じ日付ですでに登録されている時間帯と重なる場合は保存できません(エラーメッセージが表示されます)。
         </GuideItem>
@@ -2247,7 +2247,7 @@ function UserGuidePanel() {
           左側で従業員の氏名・時給を登録・編集・削除します。右側の「ランク別時給アップ額」では、勤怠入力の「呼込み/同伴/その他」を選んだ際に時給へ加算する金額(1時間あたり)を、全従業員共通で設定できます。その下の「売上バックの率」(小計30,000円超/5人以上+小計50,000円超の2条件と、円未満の端数処理)は、会計確定時に自動計算される「売上バック」に使われます(「ボトル関連」は条件未定のため入力欄のみで、計算には使われません)。
         </GuideItem>
         <GuideItem label="パスワード設定">
-          売上管理・アルバイト管理の2画面それぞれにパスワードを設定できます(売上履歴は売上管理内のタブのため、売上管理のパスワードが適用されます)。両方に設定する場合は「共通のパスワード」か「画面ごとに個別」かを選べます。「ロックのタイミング」では、アプリ起動中は初回のみ確認するか、画面を開くたび毎回確認するかを選べます。パスワードを忘れた場合は、この画面下部の「パスワードをリセット」から専用のキーワードを入力するとすべての設定を解除できます。このリセット用キーワード、および「パスワード設定」タブ自体を開くためのパスワードは、アプリ制作者に確認してください。
+          売上管理・勤怠管理の2画面それぞれにパスワードを設定できます(売上履歴は売上管理内のタブのため、売上管理のパスワードが適用されます)。両方に設定する場合は「共通のパスワード」か「画面ごとに個別」かを選べます。「ロックのタイミング」では、アプリ起動中は初回のみ確認するか、画面を開くたび毎回確認するかを選べます。パスワードを忘れた場合は、この画面下部の「パスワードをリセット」から専用のキーワードを入力するとすべての設定を解除できます。このリセット用キーワード、および「パスワード設定」タブ自体を開くためのパスワードは、アプリ制作者に確認してください。
         </GuideItem>
         <GuideItem label="データ管理">
           この端末での使用容量の確認、全データのJSONファイルへの書き出し(バックアップ)、書き出したJSONファイルからの復元、全データの削除ができます。書き出し・復元・削除はいずれもパスワードで保護されています(パスワードはアプリ制作者に確認してください)。アプリデータの容量が目安を超えると、この画面に注意・警告の表示が出ます。特に「全データ削除」はこの端末のすべてのデータを初期状態に戻す取り消せない操作のため、実行前に必ずバックアップを書き出してください。
@@ -3426,9 +3426,15 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
         // 従業員行の作成は、ログイン状態への切り替わりが確定した後にApp側で行う
         // (signUp直後だと新しいセッションのトークンがまだ反映しきっておらず、
         //  ここでinsertするとRLSの認証チェックに失敗する競合が起きるため)。
-        const { error: err } = await window.supabaseClient.auth.signUp({ email, password });
-        if (err) throw err;
+        // signUp()自体が内部でセッションを確定させ、そのタイミングでApp側の
+        // onAuthStateChangeが発火し得るため、表示名は必ずsignUp()を呼ぶ前に
+        // (この行より後でawaitが一切無い、同期的なタイミングで)渡しておく。
         onSignupStart(displayName.trim());
+        const { error: err } = await window.supabaseClient.auth.signUp({ email, password });
+        if (err) {
+          onSignupStart(null); // 失敗時はクリア(次回の登録に古い表示名が誤って使われないように)
+          throw err;
+        }
         setSignedUp(true);
       }
     } catch (e) {
@@ -3559,6 +3565,7 @@ function App() {
   const [pendingLockTab, setPendingLockTab] = useState(null);
   const [authSession, setAuthSession] = useState(undefined); // undefined=確認中 | null=未ログイン | session
   const [myEmployee, setMyEmployee] = useState(null); // ログイン中ユーザー自身のemployees行
+  const [myEmployeeTimedOut, setMyEmployeeTimedOut] = useState(false); // 取得が長時間終わらない場合のフォールバック表示用
   const dataRef = useRef(null);
   const pendingSignupNameRef = useRef(null); // 新規登録直後、まだemployees行が無い場合の表示名の一時保管
 
@@ -3620,6 +3627,38 @@ function App() {
     })();
     return () => { cancelled = true; };
   }, [authSession?.user?.id]);
+
+  // 承認済みになったら、他の従業員データの変化(新規登録・承認・役割変更など)を
+  // リアルタイムで取り込む。新しい承認待ちの登録が来たら、リロードしなくても
+  // 管理者がその場で気づけるようトーストで知らせる。
+  useEffect(() => {
+    if (!myEmployee?.approved) return;
+    const channel = window.supabaseClient
+      .channel("employees-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "employees" }, (payload) => {
+        if (!dataRef.current) return;
+        const employees = [...(dataRef.current.payroll.employees || [])];
+        if (payload.eventType === "DELETE") {
+          const idx = employees.findIndex((e) => e.id === payload.old.id);
+          if (idx >= 0) employees.splice(idx, 1);
+        } else {
+          const r = payload.new;
+          const mapped = { id: r.id, name: r.name, hourlyWage: r.hourly_wage, role: r.role, approved: r.approved, authUserId: r.auth_user_id };
+          const idx = employees.findIndex((e) => e.id === mapped.id);
+          if (idx >= 0) employees[idx] = mapped;
+          else employees.push(mapped);
+          if (payload.eventType === "INSERT" && mapped.approved === false && myEmployee.role === "admin") {
+            showToast(`新しい登録リクエストがあります: ${mapped.name}`);
+          }
+        }
+        const merged = { ...dataRef.current, payroll: { ...dataRef.current.payroll, employees } };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        dataRef.current = merged;
+        setData(merged);
+      })
+      .subscribe();
+    return () => { window.supabaseClient.removeChannel(channel); };
+  }, [myEmployee?.approved, myEmployee?.role]);
 
   // 承認済みになったら、まずSupabaseの座席全件を取得してローカルに反映し(この端末が
   // 開いていなかった間に他端末で行われた変更を取り込む)、その後はRealtime購読で
@@ -3801,6 +3840,18 @@ function App() {
     };
   }, [myEmployee?.approved]);
 
+  // ログイン済みなのに自分のemployees行がなかなか取得できない場合の保険。
+  // 何らかの不具合や通信エラーで無限に「読み込み中…」のまま止まってしまうと
+  // ユーザーには真っ白な画面に見えてしまうため、一定時間で諦めて再読み込みを促す。
+  useEffect(() => {
+    if (!authSession?.user?.id || myEmployee) {
+      setMyEmployeeTimedOut(false);
+      return;
+    }
+    const t = setTimeout(() => setMyEmployeeTimedOut(true), 10000);
+    return () => clearTimeout(t);
+  }, [authSession?.user?.id, myEmployee]);
+
   const handleLogout = () => {
     window.supabaseClient.auth.signOut();
   };
@@ -3923,6 +3974,17 @@ function App() {
   }
 
   if (!myEmployee) {
+    if (myEmployeeTimedOut) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS, gap: 16 }}>
+          <div style={{ fontSize: 14, color: COLORS.inkSoft }}>
+            読み込みに時間がかかっています。通信状況をご確認のうえ、再読み込みしてください。
+          </div>
+          <TicketButton variant="primary" onClick={() => window.location.reload()}>再読み込み</TicketButton>
+          <TicketButton variant="secondary" onClick={handleLogout}>ログアウト</TicketButton>
+        </div>
+      );
+    }
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: COLORS.inkSoft, fontFamily: SANS }}>
         読み込み中...

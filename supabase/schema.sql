@@ -222,8 +222,10 @@ create policy "shop_settings_admin_update" on public.shop_settings
   for update using (public.is_admin());
 
 -- ============================================================================
--- Realtime有効化(seats/shifts/shop_settingsの変更をリアルタイム配信)
+-- Realtime有効化(各テーブルの変更をリアルタイム配信)
 -- ============================================================================
 alter publication supabase_realtime add table public.seats;
 alter publication supabase_realtime add table public.shifts;
 alter publication supabase_realtime add table public.shop_settings;
+alter publication supabase_realtime add table public.employees;
+alter publication supabase_realtime add table public.products;

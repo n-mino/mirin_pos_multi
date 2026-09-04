@@ -1203,7 +1203,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header
-        title="アルバイト管理"
+        title="勤怠管理"
         right={<HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />}
       />
 
