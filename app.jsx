@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 18:37";
+const APP_LAST_UPDATED = "2026/09/06 19:00";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -846,12 +846,16 @@ function csvTimestamp() {
 }
 
 // 売上履歴(売上管理内の売上履歴タブ・マスタ設定の全件書き出し双方で使う行データ)
+// 取消済み(voided)のレコードも、他の集計(件数・合計・日次集計・売上バック内訳)からは
+// 除外したままCSVにだけは含める(監査目的で「取り消したという事実」を後から追える
+// ようにするため)。専用の「状態」列(通常/取消済)で判別できるようにし、メモ列は
+// 実データのまま(タグ等は付与しない)出力する。
 function salesHistoryToCsvRows(salesHistory) {
-  const rows = [["会計ID", "日時", "座席", "人数", "呼込み", "同伴", "小計", "サービス料", "消費税", "合計", "現金", "カード", "PayPay", "ツケ", "売上バック", "メモ"]];
+  const rows = [["会計ID", "状態", "日時", "座席", "人数", "呼込み", "同伴", "小計", "サービス料", "消費税", "合計", "現金", "カード", "PayPay", "ツケ", "売上バック", "メモ"]];
   (salesHistory || []).forEach((s) => {
     const kind = companionEffectiveKind(s.companion, s.companionKind);
     rows.push([
-      s.id, s.endTime, seatDisplayLabel(s.seatId, s.seatName), s.guests,
+      s.id, s.voided ? "取消済" : "通常", s.endTime, seatDisplayLabel(s.seatId, s.seatName), s.guests,
       kind === "call" ? companionLabel(s.companion) : "", kind === "companion" ? companionLabel(s.companion) : "",
       s.subtotal, s.serviceCharge, s.tax, s.total,
       s.payments?.cash || 0, s.payments?.card || 0, s.payments?.paypay || 0, s.payments?.onAccount || 0,

@@ -1071,7 +1071,8 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
         <button
           onClick={() => {
             const suffix = mode === "today" ? "today" : mode === "date" ? dateValue : "all";
-            downloadCsv(`sales-history_${suffix}_${csvTimestamp()}.csv`, salesHistoryToCsvRows(activeFiltered));
+            // CSVは件数・合計表示と異なり、取消済みも「(取消済み)」タグ付きで含める(監査用)
+            downloadCsv(`sales-history_${suffix}_${csvTimestamp()}.csv`, salesHistoryToCsvRows(filtered));
           }}
           style={{
             marginLeft: "auto",
@@ -1506,14 +1507,13 @@ function ManualSaleEntryScreen({ data, editingSale, currentEmployeeName, onCance
       <Header title="内容を確認" onBack={() => setStep("checkout")} />
       <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
         <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: COLORS.ink }}>
-          内容を確認してください。誤りがあれば「修正」で入力し直せます。
+          内容を確認してください。
         </div>
         <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>{seatDisplayLabel(info.seatNum, seatName)}</div>
         <SaleSummaryCard sale={previewRecord} />
       </div>
-      <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper, display: "flex", gap: 8 }}>
-        <TicketButton variant="subtle" onClick={() => setStep("checkout")} style={{ flex: 1 }}>修正</TicketButton>
-        <TicketButton variant="primary" onClick={() => onSave(previewRecord)} style={{ flex: 2 }} icon={Check}>確定</TicketButton>
+      <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper }}>
+        <TicketButton variant="primary" onClick={() => onSave(previewRecord)} style={{ width: "100%" }} icon={Check}>確定</TicketButton>
       </div>
     </div>
   );
