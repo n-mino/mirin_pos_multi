@@ -792,26 +792,28 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
             ))}
           </select>
         )}
-        <button
-          onClick={exportShiftsCsv}
-          style={{
-            marginLeft: "auto",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "8px 14px",
-            borderRadius: 20,
-            border: `1.5px solid ${COLORS.line}`,
-            background: "transparent",
-            color: COLORS.inkSoft,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          <Download size={14} />
-          CSVダウンロード
-        </button>
+        {isAdmin && (
+          <button
+            onClick={exportShiftsCsv}
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 20,
+              border: `1.5px solid ${COLORS.line}`,
+              background: "transparent",
+              color: COLORS.inkSoft,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            <Download size={14} />
+            CSVダウンロード
+          </button>
+        )}
       </div>
 
       <div
