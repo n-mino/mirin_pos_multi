@@ -111,7 +111,7 @@ language sql security definer stable
 as $$
   select exists (
     select 1 from public.employees
-    where auth_user_id = auth.uid() and approved = true
+    where auth_user_id = auth.uid() and approved = true and active = true
   );
 $$;
 
@@ -122,7 +122,7 @@ language sql security definer stable
 as $$
   select exists (
     select 1 from public.employees
-    where auth_user_id = auth.uid() and approved = true and role = 'admin'
+    where auth_user_id = auth.uid() and approved = true and active = true and role = 'admin'
   );
 $$;
 

@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 10:44";
+const APP_LAST_UPDATED = "2026/09/06 11:10";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -897,12 +897,13 @@ function Header({ title, onBack, right }) {
   );
 }
 
-function HeaderIconButton({ icon: Icon, onClick, title }) {
+function HeaderIconButton({ icon: Icon, onClick, title, badge }) {
   return (
     <button
       onClick={onClick}
       title={title}
       style={{
+        position: "relative",
         background: "rgba(255,255,255,0.12)",
         border: "none",
         borderRadius: 6,
@@ -917,6 +918,30 @@ function HeaderIconButton({ icon: Icon, onClick, title }) {
       }}
     >
       <Icon size={18} />
+      {badge > 0 && (
+        <span
+          style={{
+            position: "absolute",
+            top: -4,
+            right: -4,
+            minWidth: 16,
+            height: 16,
+            padding: "0 3px",
+            borderRadius: 8,
+            background: COLORS.brick,
+            color: "#FBF9F4",
+            fontSize: 10,
+            fontWeight: 700,
+            fontFamily: MONO,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            lineHeight: 1,
+          }}
+        >
+          {badge}
+        </span>
+      )}
     </button>
   );
 }
@@ -986,7 +1011,7 @@ function Toast({ message }) {
 /* ---------------------------------------------------------
    トップ画面(座席一覧)
 --------------------------------------------------------- */
-function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout, myEmployee }) {
+function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout, myEmployee, pendingCount }) {
   const todayTotal = data.salesHistory
     .filter((s) => isToday(s.endTime))
     .reduce((sum, s) => sum + s.total, 0);
@@ -1006,7 +1031,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
               </span>
             )}
             {role === "admin" ? (
-              <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />
+              <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" badge={pendingCount} />
             ) : (
               <button
                 onClick={onLogout}
@@ -3654,6 +3679,19 @@ function PendingApprovalScreen({ employee, onLogout }) {
   );
 }
 
+function DeactivatedScreen({ employee, onLogout }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>ログインできません</div>
+      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20 }}>
+        {employee?.name ? `${employee.name}さんのアカウントは、` : "このアカウントは、"}
+        退職済みとして無効化されています。心当たりが無い場合は管理者にお問い合わせください。
+      </div>
+      <TicketButton variant="ghost" onClick={onLogout}>ログアウト</TicketButton>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------
    ルートアプリ
 --------------------------------------------------------- */
@@ -3708,7 +3746,7 @@ function App() {
         pendingSignupNameRef.current = null;
         const { data: inserted, error: insertErr } = await window.supabaseClient
           .from("employees")
-          .insert({ id: uid("emp"), name, hourly_wage: 0, role: "staff", auth_user_id: authSession.user.id, approved: false })
+          .insert({ id: uid("emp"), name, hourly_wage: 1800, role: "staff", auth_user_id: authSession.user.id, approved: false })
           .select()
           .single();
         if (cancelled) return;
@@ -4165,6 +4203,10 @@ function App() {
     return <PendingApprovalScreen employee={myEmployee} onLogout={handleLogout} />;
   }
 
+  if (myEmployee.active === false) {
+    return <DeactivatedScreen employee={myEmployee} onLogout={handleLogout} />;
+  }
+
   const goToHomeTab = (tab) => {
     setHomeTab(tab);
     setScreen(tab === "seats" ? "top" : tab);
@@ -4320,6 +4362,9 @@ function App() {
   };
 
   const seat = activeSeat ? data.seats[activeSeat] : null;
+  // 承認待ちアカウント件数。設定アイコンにバッジ表示し、マスタ設定を開かなくても
+  // 管理者が承認待ちの存在にリロード無しで気づけるようにする。
+  const pendingApprovalCount = myEmployee?.role === "admin" ? (data.payroll.employees || []).filter((e) => e.approved === false).length : 0;
 
   return (
     <div
@@ -4349,6 +4394,7 @@ function App() {
           role={myEmployee?.role}
           onLogout={handleLogout}
           myEmployee={myEmployee}
+          pendingCount={pendingApprovalCount}
         />
       )}
 

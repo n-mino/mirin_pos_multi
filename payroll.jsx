@@ -269,7 +269,7 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDe
 
 function EmployeeEditModal({ employee, onCancel, onSave }) {
   const [name, setName] = useState(employee.name || "");
-  const [wage, setWage] = useState(employee.hourlyWage != null ? String(employee.hourlyWage) : "");
+  const [wage, setWage] = useState(employee.hourlyWage != null ? String(employee.hourlyWage) : "1800");
 
   const valid = name.trim().length > 0 && wage !== "" && Number(wage) >= 0;
 
@@ -564,24 +564,28 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
             </div>
           </div>
 
-          <div>
-            <label style={{ fontSize: 12, color: COLORS.inkSoft }}>日給(円・任意)</label>
-            <input type="number" min="0" value={form.dailyWage} onChange={(e) => setField("dailyWage", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
-            <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 4 }}>
-              値を入力すると、時間による計算の代わりに日給が使用されます
+          {!lockedEmployeeId && (
+            <div>
+              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>日給(円・任意)</label>
+              <input type="number" min="0" value={form.dailyWage} onChange={(e) => setField("dailyWage", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
+              <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 4 }}>
+                値を入力すると、時間による計算の代わりに日給が使用されます
+              </div>
             </div>
-          </div>
+          )}
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>同伴バック(円)</label>
-              <input type="number" min="0" value={form.option} onChange={(e) => setField("option", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
+          {!lockedEmployeeId && (
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: COLORS.inkSoft }}>同伴バック(円)</label>
+                <input type="number" min="0" value={form.option} onChange={(e) => setField("option", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: COLORS.inkSoft }}>売上バック(円)</label>
+                <input type="number" min="0" value={form.option2} onChange={(e) => setField("option2", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>売上バック(円)</label>
-              <input type="number" min="0" value={form.option2} onChange={(e) => setField("option2", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
-            </div>
-          </div>
+          )}
 
           <div>
             <label style={{ fontSize: 12, color: COLORS.inkSoft }}>メモ(任意)</label>
@@ -1242,7 +1246,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
         title="勤怠管理"
         right={
           isAdmin ? (
-            <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />
+            <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" badge={isAdmin ? employees.filter((e) => e.approved === false).length : 0} />
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {myEmployee && (
