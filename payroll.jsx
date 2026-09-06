@@ -205,7 +205,7 @@ function TimeStepSelect({ value, onChange }) {
 /* ---------------------------------------------------------
    アルバイト管理
 --------------------------------------------------------- */
-function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDemote, currentEmployeeId, onCheckPending, checkingPending }) {
+function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDemote, currentEmployeeId, onCheckPending, checkingPending, onResetPassword, resettingPasswordId }) {
   return (
     <>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -257,6 +257,15 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDe
                 {onDemote && emp.role === "admin" && emp.id !== currentEmployeeId && (
                   <button onClick={() => onDemote(emp.id)} style={{ ...payrollIconBtnStyle, width: "auto", padding: "0 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
                     管理者から外す
+                  </button>
+                )}
+                {onResetPassword && emp.authUserId && (
+                  <button
+                    onClick={() => onResetPassword(emp)}
+                    disabled={resettingPasswordId === emp.id}
+                    style={{ ...payrollIconBtnStyle, width: "auto", padding: "0 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}
+                  >
+                    {resettingPasswordId === emp.id ? "発行中…" : "パスワード再発行"}
                   </button>
                 )}
                 <button onClick={() => onEdit(emp)} style={payrollIconBtnStyle}>
@@ -1213,7 +1222,7 @@ const PAYROLL_TABS = [
   { id: "agg", label: "集計" },
 ];
 
-function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings, activeHomeTab, onSelectHomeTab, showToast, myEmployee, onLogout }) {
+function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings, activeHomeTab, onSelectHomeTab, showToast, myEmployee, onLogout, onChangePassword }) {
   const isAdmin = myEmployee?.role === "admin";
   const visibleTabs = isAdmin ? PAYROLL_TABS : PAYROLL_TABS.filter((t) => t.id !== "agg");
   const [tab, setTab] = useState(PAYROLL_TABS[0].id);
@@ -1259,7 +1268,11 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {myEmployee && (
-                <span style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap" }}>
+                <span
+                  onClick={onChangePassword}
+                  title="タップしてパスワードを変更"
+                  style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap", cursor: "pointer", textDecoration: "underline dotted" }}
+                >
                   {myEmployee.name}
                 </span>
               )}

@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 14:32";
+const APP_LAST_UPDATED = "2026/09/06 15:17";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -1011,7 +1011,7 @@ function Toast({ message }) {
 /* ---------------------------------------------------------
    トップ画面(座席一覧)
 --------------------------------------------------------- */
-function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout, myEmployee, pendingCount }) {
+function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout, myEmployee, pendingCount, onChangePassword }) {
   const todayTotal = data.salesHistory
     .filter((s) => isToday(s.endTime))
     .reduce((sum, s) => sum + s.total, 0);
@@ -1026,7 +1026,11 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
         right={
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {myEmployee && (
-              <span style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap" }}>
+              <span
+                onClick={onChangePassword}
+                title="タップしてパスワードを変更"
+                style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap", cursor: "pointer", textDecoration: "underline dotted" }}
+              >
                 {myEmployee.name}{myEmployee.role === "admin" ? "（管理者）" : ""}
               </span>
             )}
@@ -1367,7 +1371,7 @@ function ConfirmModal({ title, message, confirmLabel = "OK", onConfirm, onCancel
             {title}
           </div>
         </div>
-        <div style={{ fontSize: 13.5, color: COLORS.inkSoft, lineHeight: 1.6, marginBottom: 22 }}>
+        <div style={{ fontSize: 13.5, color: COLORS.inkSoft, lineHeight: 1.6, marginBottom: 22, whiteSpace: "pre-wrap" }}>
           {message}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -2582,6 +2586,24 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
     if (tab === "staff") checkPendingApprovals();
   }, [tab]);
 
+  // 従業員のパスワード再発行(Edge Function呼び出し)。仮パスワードは英数字(小文字)6文字。
+  // service_role権限が必要な操作(Supabase Authのパスワード直接変更)はクライアントから
+  // 直接行えないため、専用のEdge Function(admin-reset-employee-password)を経由する。
+  const [resettingPasswordId, setResettingPasswordId] = useState(null);
+  const [passwordResetResult, setPasswordResetResult] = useState(null); // { name, tempPassword }
+  const resetEmployeePassword = async (employee) => {
+    setResettingPasswordId(employee.id);
+    const { data, error } = await window.supabaseClient.functions.invoke("admin-reset-employee-password", {
+      body: { employeeId: employee.id },
+    });
+    setResettingPasswordId(null);
+    if (error || data?.error) {
+      showToast(`パスワード再発行に失敗しました: ${data?.error || error.message}`);
+      return;
+    }
+    setPasswordResetResult({ name: data.name, tempPassword: data.tempPassword });
+  };
+
   const saveRankBonusRates = (rates) => {
     onUpdatePayroll({ rankBonusRates: rates });
     showToast("保存しました");
@@ -3063,6 +3085,8 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 currentEmployeeId={myEmployee?.id}
                 onCheckPending={checkPendingApprovals}
                 checkingPending={checkingPending}
+                onResetPassword={resetEmployeePassword}
+                resettingPasswordId={resettingPasswordId}
               />
               {data.payroll.employees.some((e) => e.active === false) && (
                 <div style={{ marginTop: 20 }}>
@@ -3365,6 +3389,16 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
           />
         );
       })()}
+
+      {passwordResetResult && (
+        <ConfirmModal
+          title="パスワードを再発行しました"
+          message={`${passwordResetResult.name} さんの新しい仮パスワード: ${passwordResetResult.tempPassword}\n\nこの仮パスワードを本人に伝えてください。ログイン後、ご本人に新しいパスワードへ変更していただくことをおすすめします(座席一覧・勤怠管理の画面でご自身の名前をタップすると変更できます)。`}
+          confirmLabel="閉じた(伝達済み)"
+          onCancel={() => setPasswordResetResult(null)}
+          onConfirm={() => setPasswordResetResult(null)}
+        />
+      )}
     </div>
   );
 }
@@ -3742,6 +3776,61 @@ function DeactivatedScreen({ employee, onLogout }) {
   );
 }
 
+// ログイン中の本人が自分のパスワードを変更するモーダル(役割問わず誰でも使える)。
+// 現在のパスワードの再入力は求めない(既にログイン済みのセッションを信頼するSupabase Authの
+// 標準的な仕様に従っている)。
+function PasswordChangeModal({ onClose, showToast }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const canSubmit = password.length >= 6 && password === confirm;
+
+  const handleSubmit = async () => {
+    if (!canSubmit || busy) return;
+    setBusy(true);
+    setError("");
+    const { error: err } = await window.supabaseClient.auth.updateUser({ password });
+    setBusy(false);
+    if (err) {
+      setError(err.message || "変更に失敗しました。時間をおいて再度お試しください。");
+      return;
+    }
+    showToast("パスワードを変更しました");
+    onClose();
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 }}>
+      <div style={{ background: COLORS.paper, borderRadius: 12, padding: 26, width: "100%", maxWidth: 340, boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
+        <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, color: COLORS.ink, marginBottom: 18 }}>
+          パスワードを変更
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>新しいパスワード(6文字以上)</div>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>新しいパスワード(確認)</div>
+            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }} />
+          </div>
+          {error && (
+            <div style={{ fontSize: 12.5, color: COLORS.brick, background: COLORS.brickBg, borderRadius: 6, padding: "8px 10px" }}>{error}</div>
+          )}
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <TicketButton variant="ghost" onClick={onClose} style={{ flex: 1 }}>キャンセル</TicketButton>
+            <TicketButton variant="primary" onClick={handleSubmit} disabled={!canSubmit || busy} style={{ flex: 1 }}>
+              {busy ? "変更中…" : "変更する"}
+            </TicketButton>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------
    ルートアプリ
 --------------------------------------------------------- */
@@ -3761,6 +3850,7 @@ function App() {
   const [authSession, setAuthSession] = useState(undefined); // undefined=確認中 | null=未ログイン | session
   const [myEmployee, setMyEmployee] = useState(null); // ログイン中ユーザー自身のemployees行
   const [myEmployeeTimedOut, setMyEmployeeTimedOut] = useState(false); // 取得が長時間終わらない場合のフォールバック表示用
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const dataRef = useRef(null);
   const pendingSignupNameRef = useRef(null); // 新規登録直後、まだemployees行が無い場合の表示名の一時保管
 
@@ -4456,6 +4546,7 @@ function App() {
           onLogout={handleLogout}
           myEmployee={myEmployee}
           pendingCount={pendingApprovalCount}
+          onChangePassword={() => setShowPasswordChange(true)}
         />
       )}
 
@@ -4551,6 +4642,7 @@ function App() {
           showToast={showToast}
           myEmployee={myEmployee}
           onLogout={handleLogout}
+          onChangePassword={() => setShowPasswordChange(true)}
         />
       )}
 
@@ -4585,6 +4677,10 @@ function App() {
           onCancel={() => setPendingLockTab(null)}
           onSuccess={handleUnlockSuccess}
         />
+      )}
+
+      {showPasswordChange && (
+        <PasswordChangeModal onClose={() => setShowPasswordChange(false)} showToast={showToast} />
       )}
 
       <Toast message={toast} />
