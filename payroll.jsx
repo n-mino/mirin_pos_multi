@@ -711,6 +711,9 @@ function SalesBackBreakdownCard({ salesHistory, employees, dateMode, dateValue, 
 }
 
 function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdit, onDelete, onTogglePaid, lockedEmployeeId, isAdmin = true }) {
+  // スタッフには「操作」列(支払い/編集・削除ボタン)自体を見せない
+  // (自分の勤怠を自分で編集・削除できないようにする、管理者のみの機能)。
+  const shiftTableCols = isAdmin ? SHIFT_TABLE_COLS : SHIFT_TABLE_COLS.split(" ").slice(1).join(" ");
   const [viewMode, setViewMode] = useState(lockedEmployeeId ? "individual" : "all"); // individual | all
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(lockedEmployeeId || employees[0]?.id || "");
   const [dateMode, setDateMode] = useState("today"); // today | all | date
@@ -854,11 +857,11 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
         </div>
       ) : (
         <div style={{ overflowX: "auto" }}>
-          <div style={{ minWidth: 1210 }}>
+          <div style={{ minWidth: isAdmin ? 1210 : 1110 }}>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: SHIFT_TABLE_COLS,
+                gridTemplateColumns: shiftTableCols,
                 gap: 4,
                 padding: "8px 10px",
                 borderBottom: `1px solid ${COLORS.line}`,
@@ -867,7 +870,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                 fontWeight: 700,
               }}
             >
-              <div>操作</div>
+              {isAdmin && <div>操作</div>}
               <div>日付</div>
               <div>従業員</div>
               <div>時間</div>
@@ -889,7 +892,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                   key={shift.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: SHIFT_TABLE_COLS,
+                    gridTemplateColumns: shiftTableCols,
                     gap: 4,
                     padding: "8px 10px",
                     borderBottom: `1px dashed ${COLORS.line}`,
@@ -898,38 +901,22 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                     alignItems: "center",
                   }}
                 >
+                  {isAdmin && (
                   <div style={{ display: "flex", gap: 4 }}>
-                    {isAdmin ? (
-                      <button
-                        onClick={() => onTogglePaid(shift.id)}
-                        title={shift.paidDate ? "支払い済みを解除" : "支払い済みにする"}
-                        style={{
-                          ...payrollIconBtnStyle,
-                          width: 26,
-                          height: 26,
-                          background: shift.paidDate ? COLORS.sage : "transparent",
-                          border: `1px solid ${shift.paidDate ? COLORS.sage : COLORS.line}`,
-                          color: shift.paidDate ? COLORS.paper : COLORS.inkSoft,
-                        }}
-                      >
-                        <Banknote size={12} />
-                      </button>
-                    ) : (
-                      <div
-                        title={shift.paidDate ? "支払い済み" : "支払い未定(管理者のみ変更可)"}
-                        style={{
-                          ...payrollIconBtnStyle,
-                          width: 26,
-                          height: 26,
-                          background: shift.paidDate ? COLORS.sage : "transparent",
-                          border: `1px solid ${shift.paidDate ? COLORS.sage : COLORS.line}`,
-                          color: shift.paidDate ? COLORS.paper : COLORS.inkSoft,
-                          cursor: "default",
-                        }}
-                      >
-                        <Banknote size={12} />
-                      </div>
-                    )}
+                    <button
+                      onClick={() => onTogglePaid(shift.id)}
+                      title={shift.paidDate ? "支払い済みを解除" : "支払い済みにする"}
+                      style={{
+                        ...payrollIconBtnStyle,
+                        width: 26,
+                        height: 26,
+                        background: shift.paidDate ? COLORS.sage : "transparent",
+                        border: `1px solid ${shift.paidDate ? COLORS.sage : COLORS.line}`,
+                        color: shift.paidDate ? COLORS.paper : COLORS.inkSoft,
+                      }}
+                    >
+                      <Banknote size={12} />
+                    </button>
                     <button onClick={() => onEdit(shift.id)} style={{ ...payrollIconBtnStyle, width: 26, height: 26 }}>
                       <Pencil size={12} />
                     </button>
@@ -937,6 +924,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                       <Trash2 size={12} />
                     </button>
                   </div>
+                  )}
                   <div style={{ fontFamily: SANS, color: COLORS.ink }}>{shift.date}</div>
                   <div style={{ fontFamily: SANS, color: COLORS.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {emp ? emp.name : "(削除済み)"}
