@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 15:17";
+const APP_LAST_UPDATED = "2026/09/06 18:13";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -363,6 +363,70 @@ function computeSalesBackAmount(subtotal, guests, salesBackRates, orders, produc
   const mode = rates.roundMode || "floor";
   const amount = mode === "ceil" ? Math.ceil(raw) : mode === "round" ? Math.round(raw) : Math.floor(raw);
   return { amount, key };
+}
+
+// 売上履歴を手動入力(操作不能時などの代替手段)で作成した際、メモ欄先頭へ
+// 自動追記するタグ。売上バックタグと同様の仕組みで、編集時に再計算した
+// メモから毎回この文字列を剥がしてから再度付け直すことで、多重付与を防ぐ。
+const MANUAL_ENTRY_TAG = "(手動入力)";
+
+// buildSaleRecord()が組み立てたメモ(手動入力タグ+売上バックタグ+ユーザー入力メモ)から
+// 自動付与されたタグ部分だけを取り除き、ユーザーが実際に入力したメモ本文を復元する。
+// 編集画面でメモ欄を再表示する際に使う(タグは保存のたびにbuildSaleRecord側で
+// 再計算して付け直すため、編集開始時点では剥がしておかないと二重に付いてしまう)。
+function stripAutoMemoTags(memo) {
+  let m = memo || "";
+  if (m.startsWith(MANUAL_ENTRY_TAG)) m = m.slice(MANUAL_ENTRY_TAG.length);
+  for (const tag of Object.values(SALES_BACK_TAGS)) {
+    if (m.startsWith(tag)) { m = m.slice(tag.length); break; }
+  }
+  if (m.startsWith(" ")) m = m.slice(1);
+  return m;
+}
+
+// 論理削除(取消)されていない売上履歴かどうか。集計・CSV・売上バック内訳など
+// 「確定した売上として数える」場面ではすべてこれでフィルタする(一覧表示自体は
+// 取消済みも残して「取消済み」ラベルを出すため、この関数を通さない)。
+function isSaleActive(s) {
+  return !s.voided;
+}
+
+// 会計確定(通常フロー・売上手動入力・売上履歴の編集保存)で共通して使う、
+// 売上履歴1件分のレコード組み立て処理。売上バックの計算・メモ欄への
+// タグ自動付与(売上バックタグ、および手動入力の場合はMANUAL_ENTRY_TAG)を
+// 一箇所にまとめている。
+// - id: 指定すれば既存レコードの上書き保存(編集)、省略すれば新規発行。
+// - memoはタグを含まない「ユーザー入力分のみ」を渡すこと
+//   (編集時はstripAutoMemoTags()で剥がした値を渡し、この関数側で毎回付け直す)。
+// - manualTagをtrueにすると先頭にMANUAL_ENTRY_TAGを付与する。
+function buildSaleRecord({ id, seatNum, seatName, seat, bill, payments, memo, payroll, products, manualTag, startTime, endTime }) {
+  const companionKind = companionEffectiveKind(seat.companion, seat.companionKind);
+  const salesBack = companionKind
+    ? computeSalesBackAmount(bill.subtotal, seat.guests, payroll?.salesBackRates, seat.orders, products)
+    : { amount: 0, key: null };
+  const salesBackTag = salesBack.key ? SALES_BACK_TAGS[salesBack.key] : "";
+  const tags = `${manualTag ? MANUAL_ENTRY_TAG : ""}${salesBackTag}`;
+  const finalMemo = tags ? `${tags}${memo ? ` ${memo}` : ""}` : memo || "";
+  return {
+    id: id || uid("sale"),
+    seatId: seatNum,
+    seatName: seatName || "",
+    guests: seat.guests,
+    companion: companionLabel(seat.companion),
+    companionKind,
+    salesBackAmount: salesBack.amount,
+    startTime: startTime || seat.startTime,
+    endTime: endTime || new Date().toISOString(),
+    orders: seat.orders,
+    subtotal: bill.subtotal,
+    serviceRate: bill.serviceRate,
+    serviceCharge: bill.serviceCharge,
+    taxRate: bill.taxRate,
+    tax: bill.tax,
+    total: bill.total,
+    payments,
+    memo: finalMemo,
+  };
 }
 
 function formatElapsed(startIso, nowMs) {
@@ -1013,9 +1077,9 @@ function Toast({ message }) {
 --------------------------------------------------------- */
 function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout, myEmployee, pendingCount, onChangePassword }) {
   const todayTotal = data.salesHistory
-    .filter((s) => isToday(s.endTime))
+    .filter((s) => isToday(s.endTime) && isSaleActive(s))
     .reduce((sum, s) => sum + s.total, 0);
-  const todayCount = data.salesHistory.filter((s) => isToday(s.endTime)).length;
+  const todayCount = data.salesHistory.filter((s) => isToday(s.endTime) && isSaleActive(s)).length;
 
   const seatNums = Array.from({ length: data.seatCount }, (_, i) => i + 1);
 
@@ -1708,15 +1772,15 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
 /* ---------------------------------------------------------
    会計(料金詳細確認)画面
 --------------------------------------------------------- */
-function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelRequest }) {
+function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelRequest, initialPayments, initialMemo, confirmLabel }) {
   const bill = computeBill(seat, data);
   const { subtotal, serviceRate, serviceCharge, taxRate, tax, total } = bill;
 
-  const [cash, setCash] = useState("");
-  const [card, setCard] = useState("");
-  const [paypay, setPaypay] = useState("");
-  const [onAccount, setOnAccount] = useState("");
-  const [memo, setMemo] = useState("");
+  const [cash, setCash] = useState(initialPayments?.cash ? String(initialPayments.cash) : "");
+  const [card, setCard] = useState(initialPayments?.card ? String(initialPayments.card) : "");
+  const [paypay, setPaypay] = useState(initialPayments?.paypay ? String(initialPayments.paypay) : "");
+  const [onAccount, setOnAccount] = useState(initialPayments?.onAccount ? String(initialPayments.onAccount) : "");
+  const [memo, setMemo] = useState(initialMemo || "");
 
   const cashN = Math.max(0, Number(cash) || 0);
   const cardN = Math.max(0, Number(card) || 0);
@@ -1862,7 +1926,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
           style={{ width: "100%", padding: "14px 18px" }}
           icon={Check}
         >
-          会計を確定して座席を空ける
+          {confirmLabel || "会計を確定して座席を空ける"}
         </TicketButton>
         {onCancelRequest && (
           <TicketButton variant="ghost" onClick={onCancelRequest} style={{ width: "100%" }}>
@@ -3525,81 +3589,121 @@ function ProductEditModal({ product, categories, onCancel, onSave }) {
 /* ---------------------------------------------------------
    売上履歴 - 明細画面
 --------------------------------------------------------- */
-function HistoryDetailScreen({ sale, onBack }) {
+// 会計データ1件分の明細カード(小計〜合計・支払い内訳・メモ)。
+// 「会計明細」画面と、売上手動入力/編集フローの確認画面の両方で使う。
+function SaleSummaryCard({ sale }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Header title={`会計明細 - ${seatDisplayLabel(sale.seatId, sale.seatName)}`} onBack={onBack} />
+    <>
+      <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 18 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
+          <span>{sale.guests}名</span>
+          <span>入店 {formatDateTimeShort(sale.startTime)} 〜 会計 {formatDateTimeShort(sale.endTime)}</span>
+        </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
-        <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 18 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
-            <span>{sale.guests}名</span>
-            <span>入店 {formatDateTimeShort(sale.startTime)} 〜 会計 {formatDateTimeShort(sale.endTime)}</span>
+        {sale.orders.map((o) => (
+          <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13.5 }}>
+            <span style={{ color: COLORS.ink }}>{o.name} <span style={{ color: COLORS.inkSoft }}>× {o.qty}</span></span>
+            <span style={{ fontFamily: MONO, color: COLORS.ink }}>{formatYen(o.price * o.qty)}</span>
           </div>
+        ))}
 
-          {sale.orders.map((o) => (
-            <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13.5 }}>
-              <span style={{ color: COLORS.ink }}>{o.name} <span style={{ color: COLORS.inkSoft }}>× {o.qty}</span></span>
-              <span style={{ fontFamily: MONO, color: COLORS.ink }}>{formatYen(o.price * o.qty)}</span>
+        <div style={{ borderTop: `1px dashed ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+            <span>小計</span>
+            <span style={{ fontFamily: MONO }}>{formatYen(sale.subtotal ?? sale.total)}</span>
+          </div>
+          {(sale.serviceCharge ?? 0) > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+              <span>サービス料（{formatPercent(sale.serviceRate)}）</span>
+              <span style={{ fontFamily: MONO }}>{formatYen(sale.serviceCharge)}</span>
+            </div>
+          )}
+          {(sale.tax ?? 0) > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+              <span>消費税（{formatPercent(sale.taxRate)}）</span>
+              <span style={{ fontFamily: MONO }}>{formatYen(sale.tax)}</span>
+            </div>
+          )}
+        </div>
+
+        <div style={{ borderTop: `1px solid ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontWeight: 700, color: COLORS.ink }}>合計</span>
+          <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.teal }}>{formatYen(sale.total)}</span>
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>お支払い内訳</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[
+            { label: "現金", icon: Banknote, key: "cash" },
+            { label: "クレジット", icon: CreditCard, key: "card" },
+            { label: "PayPay", icon: Smartphone, key: "paypay" },
+            { label: "売掛", icon: FileText, key: "onAccount" },
+          ].filter((row) => (sale.payments?.[row.key] ?? 0) > 0).map((row) => (
+            <div key={row.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.inkSoft, fontSize: 13 }}>
+                <row.icon size={15} /> {row.label}
+              </div>
+              <span style={{ fontFamily: MONO, fontWeight: 700, color: COLORS.ink }}>{formatYen(sale.payments[row.key])}</span>
             </div>
           ))}
-
-          <div style={{ borderTop: `1px dashed ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
-              <span>小計</span>
-              <span style={{ fontFamily: MONO }}>{formatYen(sale.subtotal ?? sale.total)}</span>
-            </div>
-            {(sale.serviceCharge ?? 0) > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
-                <span>サービス料（{formatPercent(sale.serviceRate)}）</span>
-                <span style={{ fontFamily: MONO }}>{formatYen(sale.serviceCharge)}</span>
-              </div>
-            )}
-            {(sale.tax ?? 0) > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
-                <span>消費税（{formatPercent(sale.taxRate)}）</span>
-                <span style={{ fontFamily: MONO }}>{formatYen(sale.tax)}</span>
-              </div>
-            )}
-          </div>
-
-          <div style={{ borderTop: `1px solid ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontWeight: 700, color: COLORS.ink }}>合計</span>
-            <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.teal }}>{formatYen(sale.total)}</span>
-          </div>
+          {(!sale.payments || Object.values(sale.payments).every((v) => !v)) && (
+            <div style={{ fontSize: 12.5, color: COLORS.inkSoft }}>支払い情報がありません</div>
+          )}
         </div>
+      </div>
 
+      {sale.memo && (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>お支払い内訳</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[
-              { label: "現金", icon: Banknote, key: "cash" },
-              { label: "クレジット", icon: CreditCard, key: "card" },
-              { label: "PayPay", icon: Smartphone, key: "paypay" },
-              { label: "売掛", icon: FileText, key: "onAccount" },
-            ].filter((row) => (sale.payments?.[row.key] ?? 0) > 0).map((row) => (
-              <div key={row.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.inkSoft, fontSize: 13 }}>
-                  <row.icon size={15} /> {row.label}
-                </div>
-                <span style={{ fontFamily: MONO, fontWeight: 700, color: COLORS.ink }}>{formatYen(sale.payments[row.key])}</span>
-              </div>
-            ))}
-            {(!sale.payments || Object.values(sale.payments).every((v) => !v)) && (
-              <div style={{ fontSize: 12.5, color: COLORS.inkSoft }}>支払い情報がありません</div>
-            )}
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>メモ</div>
+          <div style={{ background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.ink, whiteSpace: "pre-wrap" }}>
+            {sale.memo}
           </div>
         </div>
+      )}
+    </>
+  );
+}
 
-        {sale.memo && (
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>メモ</div>
-            <div style={{ background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.ink, whiteSpace: "pre-wrap" }}>
-              {sale.memo}
-            </div>
+function HistoryDetailScreen({ sale, onBack, onEdit, onToggleVoid }) {
+  const [showVoidConfirm, setShowVoidConfirm] = useState(false);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Header
+        title={`会計明細 - ${seatDisplayLabel(sale.seatId, sale.seatName)}`}
+        onBack={onBack}
+        right={
+          <div style={{ display: "flex", gap: 8 }}>
+            <HeaderIconButton icon={Pencil} onClick={onEdit} title="編集" />
+            <HeaderIconButton icon={sale.voided ? RefreshCw : Ban} onClick={() => setShowVoidConfirm(true)} title={sale.voided ? "取消を解除" : "取消"} />
+          </div>
+        }
+      />
+
+      <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+        {sale.voided && (
+          <div style={{ background: COLORS.brickBg, border: `1.5px solid ${COLORS.brick}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.brick, fontWeight: 700 }}>
+            この会計は取消済みです。件数・金額の集計、CSV、売上バックの対象から除外されています(データ自体は削除されていません)。
           </div>
         )}
+        <SaleSummaryCard sale={sale} />
       </div>
+
+      {showVoidConfirm && (
+        <ConfirmModal
+          title={sale.voided ? "取消を解除しますか？" : "取消しますか？"}
+          message={
+            sale.voided
+              ? "この会計を再び集計・CSV・売上バックの対象に戻します。"
+              : "この会計を取消済みにします。一覧には残りますが、集計・CSV・売上バックの対象から除外されます(いつでも解除できます)。"
+          }
+          confirmLabel={sale.voided ? "解除する" : "取消す"}
+          onCancel={() => setShowVoidConfirm(false)}
+          onConfirm={() => { setShowVoidConfirm(false); onToggleVoid(); }}
+        />
+      )}
     </div>
   );
 }
@@ -3837,7 +3941,7 @@ function PasswordChangeModal({ onClose, showToast }) {
 function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState("top"); // top | order | checkout | settings | historyDetail | salesManagement | payroll
+  const [screen, setScreen] = useState("top"); // top | order | checkout | settings | historyDetail | salesManagement | payroll | manualSale
   const [homeTab, setHomeTab] = useState("seats"); // seats | salesManagement | payroll
   const [activeSeat, setActiveSeat] = useState(null);
   const [guestModalSeat, setGuestModalSeat] = useState(null);
@@ -4478,38 +4582,52 @@ function App() {
   const handleCheckoutConfirm = (payments, bill, memo) => {
     const n = activeSeat;
     const seat = dataRef.current.seats[n];
-    const companionKind = companionEffectiveKind(seat.companion, seat.companionKind);
-    const salesBack = companionKind
-      ? computeSalesBackAmount(bill.subtotal, seat.guests, dataRef.current.payroll.salesBackRates, seat.orders, dataRef.current.products)
-      : { amount: 0, key: null };
-    const salesBackTag = salesBack.key ? SALES_BACK_TAGS[salesBack.key] : "";
-    const finalMemo = salesBackTag ? `${salesBackTag}${memo ? ` ${memo}` : ""}` : memo || "";
-    const record = {
-      id: uid("sale"),
-      seatId: n,
-      seatName: dataRef.current.seatNames?.[n] || "",
-      guests: seat.guests,
-      companion: companionLabel(seat.companion),
-      companionKind,
-      salesBackAmount: salesBack.amount,
-      startTime: seat.startTime,
-      endTime: new Date().toISOString(),
-      orders: seat.orders,
-      subtotal: bill.subtotal,
-      serviceRate: bill.serviceRate,
-      serviceCharge: bill.serviceCharge,
-      taxRate: bill.taxRate,
-      tax: bill.tax,
-      total: bill.total,
+    const record = buildSaleRecord({
+      seatNum: n,
+      seatName: dataRef.current.seatNames?.[n],
+      seat,
+      bill,
       payments,
-      memo: finalMemo,
-    };
+      memo,
+      payroll: dataRef.current.payroll,
+      products: dataRef.current.products,
+    });
     const newSeats = { ...dataRef.current.seats };
     delete newSeats[n];
     persist({ ...dataRef.current, seats: newSeats, salesHistory: [...dataRef.current.salesHistory, record] });
     setActiveSeat(null);
     setScreen("top");
     showToast(`座席${n} 会計完了 ${formatYen(bill.total)}`);
+  };
+
+  const handleOpenManualSaleEntry = () => {
+    setSelectedSaleId(null);
+    setScreen("manualSale");
+  };
+
+  const handleEditSale = (id) => {
+    setSelectedSaleId(id);
+    setScreen("manualSale");
+  };
+
+  const handleCancelManualSale = () => {
+    setScreen(selectedSaleId ? "historyDetail" : "salesManagement");
+  };
+
+  const handleSaveManualSale = (record) => {
+    const isEdit = !!selectedSaleId;
+    const newHistory = isEdit
+      ? dataRef.current.salesHistory.map((s) => (s.id === record.id ? record : s))
+      : [...dataRef.current.salesHistory, record];
+    persist({ ...dataRef.current, salesHistory: newHistory });
+    setSelectedSaleId(record.id);
+    setScreen(isEdit ? "historyDetail" : "salesManagement");
+    showToast(isEdit ? `売上を更新しました ${formatYen(record.total)}` : `売上を手動登録しました ${formatYen(record.total)}`);
+  };
+
+  const handleToggleVoidSale = (id) => {
+    const newHistory = dataRef.current.salesHistory.map((s) => (s.id === id ? { ...s, voided: !s.voided } : s));
+    persist({ ...dataRef.current, salesHistory: newHistory });
   };
 
   const seat = activeSeat ? data.seats[activeSeat] : null;
@@ -4628,6 +4746,7 @@ function App() {
           activeHomeTab={homeTab}
           onSelectHomeTab={handleSelectHomeTab}
           onSelectSale={(id) => { setSelectedSaleId(id); setScreen("historyDetail"); }}
+          onOpenManualEntry={handleOpenManualSaleEntry}
         />
       )}
 
@@ -4662,9 +4781,21 @@ function App() {
           <HistoryDetailScreen
             sale={sale}
             onBack={() => { setSelectedSaleId(null); setScreen("salesManagement"); }}
+            onEdit={() => handleEditSale(sale.id)}
+            onToggleVoid={() => handleToggleVoidSale(sale.id)}
           />
         );
       })()}
+
+      {screen === "manualSale" && myEmployee?.role === "admin" && (
+        <ManualSaleEntryScreen
+          data={data}
+          editingSale={selectedSaleId ? data.salesHistory.find((s) => s.id === selectedSaleId) : null}
+          currentEmployeeName={myEmployee?.name}
+          onCancel={handleCancelManualSale}
+          onSave={handleSaveManualSale}
+        />
+      )}
 
       {guestModalSeat !== null && (
         <GuestCountModal seatNum={guestModalSeat} employees={(data.payroll?.employees || []).filter((e) => e.active !== false)} onConfirm={handleConfirmGuests} onCancel={() => setGuestModalSeat(null)} currentEmployeeName={myEmployee?.name} />

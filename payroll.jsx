@@ -645,6 +645,7 @@ function computeSalesBackBreakdown(salesHistory, employees, dateMode, dateValue,
   if (dateMode === "all") return null;
 
   const filteredSales = (salesHistory || []).filter((s) => {
+    if (!isSaleActive(s)) return false;
     if (dateMode === "today") return isToday(s.endTime);
     return isSameDate(s.endTime, dateValue);
   });

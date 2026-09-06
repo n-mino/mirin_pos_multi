@@ -561,7 +561,7 @@ function DailySummaryPanel({ data }) {
   const targetDate = mode === "today" ? toDateInputValue(new Date().toISOString()) : dateValue;
 
   const sales = data.salesHistory
-    .filter((s) => isSameDate(s.endTime, targetDate))
+    .filter((s) => isSameDate(s.endTime, targetDate) && isSaleActive(s))
     .sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
   const employees = data.payroll.employees;
   const shifts = data.payroll.shifts.filter((s) => s.date === targetDate);
@@ -751,6 +751,7 @@ function emptyPaymentTotals() {
 function aggregateSalesByDay(salesHistory, fromDate, toDate) {
   const totals = new Map();
   salesHistory.forEach((s) => {
+    if (!isSaleActive(s)) return;
     const key = toDateInputValue(s.endTime);
     if (key < fromDate || key > toDate) return;
     const cur = totals.get(key) || emptyPaymentTotals();
@@ -771,6 +772,7 @@ function aggregateSalesByDay(salesHistory, fromDate, toDate) {
 function aggregateSalesByMonth(salesHistory, fromMonth, toMonth) {
   const totals = new Map();
   salesHistory.forEach((s) => {
+    if (!isSaleActive(s)) return;
     const d = new Date(s.endTime);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     if (key < fromMonth || key > toMonth) return;
@@ -1007,7 +1009,7 @@ function AggregationGraphPanel({ data }) {
 --------------------------------------------------------- */
 const HISTORY_TABLE_COLS = "170px 110px 60px 90px 90px 90px 90px 90px 100px 90px 90px 90px 90px 90px 160px";
 
-function SalesHistoryPanel({ salesHistory, onSelectSale }) {
+function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
   const [mode, setMode] = useState("today"); // today | all | date
   const [dateValue, setDateValue] = useState(toDateInputValue(new Date().toISOString()));
 
@@ -1019,7 +1021,9 @@ function SalesHistoryPanel({ salesHistory, onSelectSale }) {
     })
     .sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
 
-  const totalAmount = filtered.reduce((sum, s) => sum + s.total, 0);
+  // 件数・合計・CSVは取消済みを除外する(一覧の行そのものは取消済みも残して表示する)
+  const activeFiltered = filtered.filter(isSaleActive);
+  const totalAmount = activeFiltered.reduce((sum, s) => sum + s.total, 0);
 
   return (
     <div>
@@ -1046,9 +1050,28 @@ function SalesHistoryPanel({ salesHistory, onSelectSale }) {
           />
         </div>
         <button
+          onClick={onOpenManualEntry}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 14px",
+            borderRadius: 20,
+            border: `1.5px solid ${COLORS.teal}`,
+            background: "transparent",
+            color: COLORS.teal,
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          <Plus size={14} />
+          売上入力
+        </button>
+        <button
           onClick={() => {
             const suffix = mode === "today" ? "today" : mode === "date" ? dateValue : "all";
-            downloadCsv(`sales-history_${suffix}_${csvTimestamp()}.csv`, salesHistoryToCsvRows(filtered));
+            downloadCsv(`sales-history_${suffix}_${csvTimestamp()}.csv`, salesHistoryToCsvRows(activeFiltered));
           }}
           style={{
             marginLeft: "auto",
@@ -1080,7 +1103,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale }) {
           marginBottom: 12,
         }}
       >
-        <span>会計 {filtered.length}件</span>
+        <span>会計 {activeFiltered.length}件</span>
         <span>合計 {formatYen(totalAmount)}</span>
       </div>
 
@@ -1141,9 +1164,17 @@ function SalesHistoryPanel({ salesHistory, onSelectSale }) {
                   borderBottomColor: COLORS.line,
                   cursor: "pointer",
                   alignItems: "center",
+                  opacity: s.voided ? 0.5 : 1,
                 }}
               >
-                <div style={{ fontFamily: SANS, color: COLORS.ink }}>{formatDateTimeRange(s.startTime, s.endTime)}</div>
+                <div style={{ fontFamily: SANS, color: COLORS.ink }}>
+                  {s.voided && (
+                    <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: COLORS.brick, border: `1px solid ${COLORS.brick}`, borderRadius: 4, padding: "0 4px", marginRight: 6 }}>
+                      取消済み
+                    </span>
+                  )}
+                  {formatDateTimeRange(s.startTime, s.endTime)}
+                </div>
                 <div style={{ fontFamily: SANS, color: COLORS.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {seatDisplayLabel(s.seatId, s.seatName)}
                 </div>
@@ -1181,7 +1212,7 @@ const SALES_MANAGEMENT_TABS = [
   { id: "chart", label: "集計グラフ" },
 ];
 
-function SalesManagementScreen({ data, onUpdateCashFlow, onOpenSettings, activeHomeTab, onSelectHomeTab, onSelectSale }) {
+function SalesManagementScreen({ data, onUpdateCashFlow, onOpenSettings, activeHomeTab, onSelectHomeTab, onSelectSale, onOpenManualEntry }) {
   const [tab, setTab] = useState(SALES_MANAGEMENT_TABS[0].id);
 
   return (
@@ -1202,10 +1233,287 @@ function SalesManagementScreen({ data, onUpdateCashFlow, onOpenSettings, activeH
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
-        {tab === "history" && <SalesHistoryPanel salesHistory={data.salesHistory} onSelectSale={onSelectSale} />}
+        {tab === "history" && <SalesHistoryPanel salesHistory={data.salesHistory} onSelectSale={onSelectSale} onOpenManualEntry={onOpenManualEntry} />}
         {tab === "entry" && <CashFlowEntryPanel cashFlow={data.cashFlow} onUpdateCashFlow={onUpdateCashFlow} />}
         {tab === "daily" && <DailySummaryPanel data={data} />}
         {tab === "chart" && <AggregationGraphPanel data={data} />}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   売上の手動入力(画面操作が行えなかった場合の代替手段)
+
+   座席選択・人数入力・商品選択・会計入力は、通常の会計フローと
+   同じ画面(GuestCountModalの入力項目・OrderScreen・CheckoutScreen)を
+   流用する。ただしdata.seats(実際の使用中座席、Supabaseに同期される
+   実データ)には一切書き込まず、このコンポーネント内のローカルstateだけで
+   完結する「仮想の座席」を経由してsalesHistoryへ直接1件追加する。
+   salesHistoryはこのアプリではSupabase未移行(タブレット1台運用前提、
+   HANDOFF.md参照)のため、persist()で他端末への同期は発生しない。
+   座席番号が実座席と重複しても実データへの影響はない(ユーザー確認済み)。
+
+   売上履歴の既存レコードの「編集」もこの画面を再利用する
+   (App.jsxのhandleEditSale経由、editingSaleに既存レコードを渡す)。
+   その場合、buildSaleRecord()が保存のたびにメモ欄のタグを再計算するため、
+   表示前にstripAutoMemoTags()でタグを剥がしてから編集用テキストとして渡す。
+   「(手動入力)」タグは、元々手動入力で作成されたレコードを編集する場合のみ
+   引き継ぎ、通常会計のレコードを編集しても新たには付与しない。
+
+   同伴/呼込みの担当者選択は、退職済み(active:false)の従業員を除外し、
+   GuestCountModalと同様にログイン中の管理者本人を初期選択する。
+--------------------------------------------------------- */
+const manualEntryLabelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 6 };
+const manualEntryInputStyle = {
+  width: "100%",
+  padding: "9px 10px",
+  borderRadius: 8,
+  border: `1.5px solid ${COLORS.line}`,
+  fontSize: 14,
+  fontFamily: SANS,
+  color: COLORS.ink,
+  background: COLORS.paper,
+};
+
+function manualEntryQuickBtnStyle(active) {
+  return {
+    padding: "10px 0",
+    borderRadius: 8,
+    border: `1.5px solid ${active ? COLORS.teal : COLORS.line}`,
+    background: active ? COLORS.teal : "transparent",
+    color: active ? "#FBF9F4" : COLORS.ink,
+    fontWeight: 700,
+    fontFamily: MONO,
+    fontSize: 15,
+    cursor: "pointer",
+  };
+}
+
+function ManualSaleInfoStep({ data, initial, currentEmployeeName, onCancel, onNext }) {
+  const employees = (data.payroll?.employees || []).filter((e) => e.active !== false);
+  const seatNums = Array.from({ length: data.seatCount }, (_, i) => i + 1);
+  const quick = [1, 2, 3, 4, 5, 6, 8];
+
+  const [seatNum, setSeatNum] = useState(initial.seatNum);
+  const [dateValue, setDateValue] = useState(initial.dateValue);
+  const [startTime, setStartTime] = useState(initial.startTime);
+  const [endTime, setEndTime] = useState(initial.endTime);
+  const [guests, setGuests] = useState(initial.guests);
+  const [companionKind, setCompanionKind] = useState(initial.companionKind);
+  const [companionName, setCompanionName] = useState(initial.companionName);
+
+  useEffect(() => {
+    if (!companionKind) {
+      setCompanionName("");
+    } else if (!companionName && employees.length > 0) {
+      const defaultName = employees.some((e) => e.name === currentEmployeeName) ? currentEmployeeName : employees[0].name;
+      setCompanionName(defaultName);
+    }
+    // eslint-disable-next-line
+  }, [companionKind, employees]);
+
+  const toggleKind = (kind) => setCompanionKind((cur) => (cur === kind ? "" : kind));
+
+  const timeError = startTime && endTime && `${dateValue}T${endTime}` <= `${dateValue}T${startTime}`;
+  const canNext = !!dateValue && !!startTime && !!endTime && !timeError && guests >= 1;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Header title="売上入力 - 基本情報" onBack={onCancel} />
+      <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 420, margin: "0 auto", width: "100%" }}>
+        <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: COLORS.ink }}>
+          画面操作ができなかった場合などに、確定済みの会計を後から記録するための機能です。メモ欄の先頭に自動で「(手動入力)」と記録されます。
+        </div>
+
+        <div>
+          <label style={manualEntryLabelStyle}>座席</label>
+          <select value={seatNum} onChange={(e) => setSeatNum(Number(e.target.value))} style={manualEntryInputStyle}>
+            {seatNums.map((n) => (
+              <option key={n} value={n}>{seatDisplayLabel(n, data.seatNames?.[n])}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label style={manualEntryLabelStyle}>日付</label>
+          <input type="date" value={dateValue} onChange={(e) => setDateValue(e.target.value)} style={{ ...manualEntryInputStyle, fontFamily: MONO }} />
+        </div>
+
+        <div style={{ display: "flex", gap: 14 }}>
+          <div style={{ flex: 1 }}>
+            <label style={manualEntryLabelStyle}>開始時刻</label>
+            <TimeStepSelect value={startTime} onChange={setStartTime} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={manualEntryLabelStyle}>終了時刻</label>
+            <TimeStepSelect value={endTime} onChange={setEndTime} />
+          </div>
+        </div>
+        {timeError && <div style={{ fontSize: 12.5, color: COLORS.brick, marginTop: -8 }}>終了時刻は開始時刻より後にしてください。</div>}
+
+        <div>
+          <label style={manualEntryLabelStyle}>人数</label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
+            {quick.map((q) => (
+              <button key={q} onClick={() => setGuests(q)} style={manualEntryQuickBtnStyle(guests === q)}>{q}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
+            <button onClick={() => setGuests((c) => Math.max(1, c - 1))} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${COLORS.line}`, background: COLORS.paper, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Minus size={15} />
+            </button>
+            <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, minWidth: 50, textAlign: "center" }}>{guests}名</span>
+            <button onClick={() => setGuests((c) => Math.min(99, c + 1))} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${COLORS.line}`, background: COLORS.paper, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Plus size={15} />
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <input type="checkbox" checked={companionKind === "call"} onChange={() => toggleKind("call")} style={{ width: 16, height: 16 }} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>呼込み</span>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <input type="checkbox" checked={companionKind === "companion"} onChange={() => toggleKind("companion")} style={{ width: 16, height: 16 }} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>同伴</span>
+          </label>
+        </div>
+
+        {companionKind && (
+          employees.length === 0 ? (
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center" }}>
+              先にマスタ設定の「アルバイトマスタ」でスタッフを登録してください。
+            </div>
+          ) : (
+            <select value={companionName} onChange={(e) => setCompanionName(e.target.value)} style={manualEntryInputStyle}>
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.name}>{emp.name}</option>
+              ))}
+            </select>
+          )
+        )}
+      </div>
+
+      <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper }}>
+        <TicketButton
+          variant="primary"
+          disabled={!canNext}
+          onClick={() => onNext({ seatNum, dateValue, startTime, endTime, guests, companionKind, companionName: companionKind ? companionName : "" })}
+          style={{ width: "100%" }}
+        >
+          次へ(商品を選ぶ)
+        </TicketButton>
+      </div>
+    </div>
+  );
+}
+
+function ManualSaleEntryScreen({ data, editingSale, currentEmployeeName, onCancel, onSave }) {
+  const isEdit = !!editingSale;
+  const [step, setStep] = useState("info"); // info | order | checkout | confirm
+  const [info, setInfo] = useState(() => (isEdit
+    ? {
+        seatNum: editingSale.seatId,
+        dateValue: toDateInputValue(editingSale.startTime),
+        startTime: formatTimeShort(editingSale.startTime),
+        endTime: formatTimeShort(editingSale.endTime),
+        guests: editingSale.guests,
+        companionKind: editingSale.companionKind || "",
+        companionName: editingSale.companion || "",
+      }
+    : {
+        seatNum: 1,
+        dateValue: toDateInputValue(new Date().toISOString()),
+        startTime: "",
+        endTime: "",
+        guests: 2,
+        companionKind: "",
+        companionName: "",
+      }));
+  const [orders, setOrders] = useState(editingSale?.orders || []);
+  const [checkoutResult, setCheckoutResult] = useState(null); // { payments, bill, memo }
+
+  // 元が手動入力レコードだった場合のみ、編集後も「(手動入力)」タグを引き継ぐ
+  // (通常会計のレコードを編集しても新たにこのタグを付けない)
+  const applyManualTag = !isEdit || (editingSale.memo || "").startsWith(MANUAL_ENTRY_TAG);
+
+  const startIso = info.startTime ? new Date(`${info.dateValue}T${info.startTime}:00`).toISOString() : null;
+  const endIso = info.endTime ? new Date(`${info.dateValue}T${info.endTime}:00`).toISOString() : null;
+  // OrderScreen/CheckoutScreenの「経過時間」表示に、実際の現在時刻ではなく
+  // 入力した終了時刻を渡す(過去日付の入力でも滞在時間が正しく見えるようにするため)
+  const displayNow = endIso ? new Date(endIso).getTime() : Date.now();
+
+  const virtualSeat = { guests: info.guests, companion: info.companionName, companionKind: info.companionKind, orders, startTime: startIso };
+  const seatName = data.seatNames?.[info.seatNum];
+
+  if (step === "info") {
+    return <ManualSaleInfoStep data={data} initial={info} currentEmployeeName={currentEmployeeName} onCancel={onCancel} onNext={(next) => { setInfo(next); setStep("order"); }} />;
+  }
+
+  if (step === "order") {
+    return (
+      <OrderScreen
+        seatNum={info.seatNum}
+        seatName={seatName}
+        seat={virtualSeat}
+        products={data.products}
+        now={displayNow}
+        onUpdateOrders={setOrders}
+        onBack={() => setStep("info")}
+        onGoCheckout={() => setStep("checkout")}
+        onCancelSeat={onCancel}
+      />
+    );
+  }
+
+  if (step === "checkout") {
+    return (
+      <CheckoutScreen
+        seatNum={info.seatNum}
+        seat={virtualSeat}
+        data={data}
+        now={displayNow}
+        onBack={() => setStep("order")}
+        initialPayments={checkoutResult?.payments || editingSale?.payments}
+        initialMemo={checkoutResult?.memo ?? (isEdit ? stripAutoMemoTags(editingSale.memo) : "")}
+        confirmLabel="内容を確認する"
+        onConfirm={(payments, bill, memo) => { setCheckoutResult({ payments, bill, memo }); setStep("confirm"); }}
+      />
+    );
+  }
+
+  // step === "confirm"
+  const previewRecord = buildSaleRecord({
+    id: editingSale?.id,
+    seatNum: info.seatNum,
+    seatName,
+    seat: virtualSeat,
+    bill: checkoutResult.bill,
+    payments: checkoutResult.payments,
+    memo: checkoutResult.memo,
+    payroll: data.payroll,
+    products: data.products,
+    manualTag: applyManualTag,
+    startTime: startIso,
+    endTime: endIso,
+  });
+  if (editingSale?.voided) previewRecord.voided = true;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Header title="内容を確認" onBack={() => setStep("checkout")} />
+      <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+        <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: COLORS.ink }}>
+          内容を確認してください。誤りがあれば「修正」で入力し直せます。
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>{seatDisplayLabel(info.seatNum, seatName)}</div>
+        <SaleSummaryCard sale={previewRecord} />
+      </div>
+      <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper, display: "flex", gap: 8 }}>
+        <TicketButton variant="subtle" onClick={() => setStep("checkout")} style={{ flex: 1 }}>修正</TicketButton>
+        <TicketButton variant="primary" onClick={() => onSave(previewRecord)} style={{ flex: 2 }} icon={Check}>確定</TicketButton>
       </div>
     </div>
   );
