@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 12:23";
+const APP_LAST_UPDATED = "2026/09/06 14:16";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -1704,7 +1704,7 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
 /* ---------------------------------------------------------
    会計(料金詳細確認)画面
 --------------------------------------------------------- */
-function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm }) {
+function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelRequest }) {
   const bill = computeBill(seat, data);
   const { subtotal, serviceRate, serviceCharge, taxRate, tax, total } = bill;
 
@@ -1850,7 +1850,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm }) {
         </div>
       </div>
 
-      <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper }}>
+      <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper, display: "flex", flexDirection: "column", gap: 8 }}>
         <TicketButton
           variant="primary"
           disabled={!canConfirm}
@@ -1860,6 +1860,11 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm }) {
         >
           会計を確定して座席を空ける
         </TicketButton>
+        {onCancelRequest && (
+          <TicketButton variant="ghost" onClick={onCancelRequest} style={{ width: "100%" }}>
+            会計を取り消す
+          </TicketButton>
+        )}
       </div>
     </div>
   );
@@ -1869,7 +1874,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm }) {
 // 確定は行わない(確定は必ずメイン端末のCheckoutScreenで行う)。
 // 「会計を依頼する」を押すと座席を"awaiting_checkout"にするだけで、
 // salesHistoryへの書き込み・座席の解放は一切発生しない。
-function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPreview }) {
+function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPreview, onCancelRequest }) {
   const bill = computeBill(seat, data);
   const { subtotal, serviceRate, serviceCharge, taxRate, tax, total } = bill;
   const alreadySubmitted = seat.status === "awaiting_checkout";
@@ -1916,8 +1921,13 @@ function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPrevi
         </div>
 
         {alreadySubmitted && (
-          <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, fontSize: 13, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
-            会計待ちです。管理者が確定するまでお待ちください。
+          <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 13, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
+              会計待ちです。管理者が確定するまでお待ちください。
+            </div>
+            <TicketButton variant="ghost" onClick={onCancelRequest} style={{ width: "100%" }}>
+              会計依頼を取り消す
+            </TicketButton>
           </div>
         )}
       </div>
@@ -4363,6 +4373,17 @@ function App() {
     persist({ ...dataRef.current, seats: newSeats });
   };
 
+  // 会計依頼(awaiting_checkout)を取り消し、注文編集に戻せる状態(occupied)に戻す。
+  // スタッフ側の「会計依頼を取り消す」・管理者側の「会計を取り消す」の両方から呼ばれる。
+  const handleCancelCheckoutRequest = (n) => {
+    const seat = dataRef.current.seats[n];
+    if (!seat) return;
+    const newSeats = { ...dataRef.current.seats, [n]: { ...seat, status: "occupied", checkoutDraft: null } };
+    persist({ ...dataRef.current, seats: newSeats });
+    setScreen("order");
+    showToast(`座席${n} 会計依頼を取り消しました`);
+  };
+
   const handleCheckoutConfirm = (payments, bill, memo) => {
     const n = activeSeat;
     const seat = dataRef.current.seats[n];
@@ -4460,6 +4481,7 @@ function App() {
             now={now}
             onBack={() => { setScreen(seat.status === "awaiting_checkout" ? "top" : "order"); if (seat.status === "awaiting_checkout") setActiveSeat(null); }}
             onConfirm={handleCheckoutConfirm}
+            onCancelRequest={seat.status === "awaiting_checkout" ? () => handleCancelCheckoutRequest(activeSeat) : null}
           />
         ) : (
           <CheckoutPreviewScreen
@@ -4469,6 +4491,7 @@ function App() {
             now={now}
             onBack={() => { setScreen(seat.status === "awaiting_checkout" ? "top" : "order"); if (seat.status === "awaiting_checkout") setActiveSeat(null); }}
             onSubmitPreview={(bill) => { handleSubmitCheckoutPreview(activeSeat, bill); setScreen("top"); setActiveSeat(null); showToast(`座席${activeSeat} 会計を依頼しました`); }}
+            onCancelRequest={() => handleCancelCheckoutRequest(activeSeat)}
           />
         )
       )}
