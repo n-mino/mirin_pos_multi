@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/04 22:04";
+const APP_LAST_UPDATED = "2026/09/06 10:44";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -2996,7 +2996,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                     {data.payroll.employees.filter((e) => e.active === false).map((e) => (
                       <div key={e.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", opacity: 0.7 }}>
                         <span style={{ fontSize: 13.5, color: COLORS.inkSoft }}>{e.name}</span>
-                        <TicketButton variant="secondary" onClick={() => reactivateEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
+                        <TicketButton variant="ghost" onClick={() => reactivateEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
                           復帰させる
                         </TicketButton>
                       </div>
@@ -3558,7 +3558,7 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
         <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20 }}>
           管理者が承認するまでお待ちください。承認後、同じユーザー名・パスワードでログインできます。
         </div>
-        <TicketButton variant="secondary" onClick={() => { setSignedUp(false); setMode("login"); setPassword(""); }}>
+        <TicketButton variant="ghost" onClick={() => { setSignedUp(false); setMode("login"); setPassword(""); }}>
           ログイン画面に戻る
         </TicketButton>
       </div>
@@ -3649,7 +3649,7 @@ function PendingApprovalScreen({ employee, onLogout }) {
         {employee?.name ? `${employee.name}さんのアカウントは、` : "アカウントは、"}
         管理者の承認をお待ちしています。承認されるまでこの画面が表示されます。
       </div>
-      <TicketButton variant="secondary" onClick={onLogout}>ログアウト</TicketButton>
+      <TicketButton variant="ghost" onClick={onLogout}>ログアウト</TicketButton>
     </div>
   );
 }
@@ -4150,7 +4150,7 @@ function App() {
             読み込みに時間がかかっています。通信状況をご確認のうえ、再読み込みしてください。
           </div>
           <TicketButton variant="primary" onClick={() => window.location.reload()}>再読み込み</TicketButton>
-          <TicketButton variant="secondary" onClick={handleLogout}>ログアウト</TicketButton>
+          <TicketButton variant="ghost" onClick={handleLogout}>ログアウト</TicketButton>
         </div>
       );
     }
