@@ -100,6 +100,15 @@ grant select, insert, update, delete on public.shifts to anon, authenticated;
 grant select, insert, update, delete on public.products to anon, authenticated;
 grant select, insert, update, delete on public.shop_settings to anon, authenticated;
 
+-- service_role(Edge Functionが使う管理者権限のキー)はRLSを無視できるが、
+-- GRANT自体は別途必要(「Automatically expose new tables」OFF設定の影響で自動付与されない)。
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.employees to service_role;
+grant select, insert, update, delete on public.seats to service_role;
+grant select, insert, update, delete on public.shifts to service_role;
+grant select, insert, update, delete on public.products to service_role;
+grant select, insert, update, delete on public.shop_settings to service_role;
+
 -- ============================================================================
 -- ヘルパー関数(RLSポリシーから参照)
 -- ============================================================================
