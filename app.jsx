@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 19:08";
+const APP_LAST_UPDATED = "2026/09/07 08:47";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -3967,7 +3967,25 @@ function App() {
     window.supabaseClient.auth.getSession().then(({ data }) => setAuthSession(data.session));
     const { data: sub } = window.supabaseClient.auth.onAuthStateChange((_event, session) => {
       setAuthSession(session);
-      if (!session) setMyEmployee(null);
+      if (!session) {
+        // 同一端末でログアウト→別アカウントで再ログインした際、直前のセッションの
+        // 画面状態(screen/homeTab等)を引きずらないようにリセットする。
+        // roleによって開ける画面が異なるため、例えば管理者がsalesManagement/
+        // settings/manualSale等の管理者専用画面にいたままログアウトすると、
+        // 次にスタッフでログインした時にそのscreen値がどの分岐にも一致せず
+        // 何も描画されない(白画面)不具合があった。
+        // (スタッフ→管理者の順では、スタッフがそもそも管理者専用screenへ
+        //  遷移できないため再現しない。これが症状の非対称性の原因だった。)
+        setMyEmployee(null);
+        setScreen("top");
+        setHomeTab("seats");
+        setActiveSeat(null);
+        setSelectedSaleId(null);
+        setGuestModalSeat(null);
+        setUnlockedTabs(new Set());
+        setPendingLockTab(null);
+        setShowPasswordChange(false);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
