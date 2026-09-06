@@ -47,11 +47,13 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // 呼び出し元の本人確認(このリクエストのAuthorizationヘッダーが有効なセッションか)
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await callerClient.auth.getUser();
+    // 呼び出し元の本人確認: ヘッダーのトークンを明示的に渡して検証する
+    // (globalヘッダー経由+引数無しのgetUser()は、Edge Function環境では
+    // セッションを正しく拾えない場合があるため、JWTを直接渡す方式にする)。
+    const jwt = authHeader.replace(/^Bearer\s+/i, "");
+    const callerClient = createClient(supabaseUrl, anonKey);
+    const { data: userData, error: userErr } = await callerClient.auth.getUser(jwt);
+    console.log("auth.getUser result:", JSON.stringify({ userId: userData?.user?.id, userErr }));
     if (userErr || !userData?.user) {
       return new Response(JSON.stringify({ error: "セッションが無効です" }), {
         status: 401,
@@ -68,6 +70,7 @@ Deno.serve(async (req) => {
       .select("role, approved, active")
       .eq("auth_user_id", userData.user.id)
       .maybeSingle();
+    console.log("caller employee lookup:", JSON.stringify({ callerEmp, callerErr }));
     if (callerErr || !callerEmp || callerEmp.role !== "admin" || !callerEmp.approved || !callerEmp.active) {
       return new Response(JSON.stringify({ error: "権限がありません(管理者のみ実行できます)" }), {
         status: 403,
@@ -81,6 +84,7 @@ Deno.serve(async (req) => {
       .select("auth_user_id, name")
       .eq("id", employeeId)
       .maybeSingle();
+    console.log("target employee lookup:", JSON.stringify({ employeeId, targetEmp, targetErr }));
     if (targetErr || !targetEmp?.auth_user_id) {
       return new Response(JSON.stringify({ error: "対象の従業員(ログインアカウント)が見つかりません" }), {
         status: 404,
