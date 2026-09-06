@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 14:16";
+const APP_LAST_UPDATED = "2026/09/06 14:24";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -1921,14 +1921,15 @@ function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPrevi
         </div>
 
         {alreadySubmitted && (
-          <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ fontSize: 13, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
-              会計待ちです。管理者が確定するまでお待ちください。
-            </div>
-            <TicketButton variant="ghost" onClick={onCancelRequest} style={{ width: "100%" }}>
-              会計依頼を取り消す
-            </TicketButton>
+          <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, fontSize: 13, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
+            会計待ちです。管理者が確定するまでお待ちください。
           </div>
+        )}
+
+        {alreadySubmitted && (
+          <TicketButton variant="danger" onClick={onCancelRequest} style={{ width: "100%" }}>
+            会計依頼を取り消す
+          </TicketButton>
         )}
       </div>
 
