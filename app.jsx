@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 11:10";
+const APP_LAST_UPDATED = "2026/09/06 12:16";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -2534,6 +2534,40 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
 
   const pendingEmployees = (data.payroll.employees || []).filter((e) => e.approved === false);
 
+  // Realtimeのバッジ通知だけだと確実性が確認しづらいため、明示的に最新の従業員一覧を
+  // 取得し直せるボタンを用意する(アルバイトマスタタブを開いた際にも自動で1回実行する)。
+  const [checkingPending, setCheckingPending] = useState(false);
+  const checkPendingApprovals = () => {
+    setCheckingPending(true);
+    window.supabaseClient
+      .from("employees")
+      .select("*")
+      .then(({ data: rows, error }) => {
+        setCheckingPending(false);
+        if (error) {
+          console.warn("[employees] check pending failed:", error.message);
+          showToast("確認に失敗しました。通信状況をご確認ください。");
+          return;
+        }
+        const mapped = (rows || []).map((r) => ({
+          id: r.id,
+          name: r.name,
+          hourlyWage: r.hourly_wage,
+          role: r.role,
+          approved: r.approved,
+          active: r.active ?? true,
+          authUserId: r.auth_user_id,
+        }));
+        onUpdatePayroll({ employees: mapped });
+        const count = mapped.filter((e) => e.approved === false).length;
+        showToast(count > 0 ? `承認待ちが${count}件あります` : "承認待ちはありません");
+      });
+  };
+
+  useEffect(() => {
+    if (tab === "staff") checkPendingApprovals();
+  }, [tab]);
+
   const saveRankBonusRates = (rates) => {
     onUpdatePayroll({ rankBonusRates: rates });
     showToast("保存しました");
@@ -3013,6 +3047,8 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 onPromote={promoteToAdmin}
                 onDemote={demoteFromAdmin}
                 currentEmployeeId={myEmployee?.id}
+                onCheckPending={checkPendingApprovals}
+                checkingPending={checkingPending}
               />
               {data.payroll.employees.some((e) => e.active === false) && (
                 <div style={{ marginTop: 20 }}>

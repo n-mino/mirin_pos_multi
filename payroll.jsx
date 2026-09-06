@@ -205,12 +205,19 @@ function TimeStepSelect({ value, onChange }) {
 /* ---------------------------------------------------------
    アルバイト管理
 --------------------------------------------------------- */
-function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDemote, currentEmployeeId }) {
+function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDemote, currentEmployeeId, onCheckPending, checkingPending }) {
   return (
     <>
-      <TicketButton variant="primary" onClick={onAdd} icon={Plus} style={{ marginBottom: 16 }}>
-        アルバイトを追加
-      </TicketButton>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <TicketButton variant="primary" onClick={onAdd} icon={Plus}>
+          アルバイトを追加
+        </TicketButton>
+        {onCheckPending && (
+          <TicketButton variant="subtle" onClick={onCheckPending} disabled={checkingPending}>
+            {checkingPending ? "確認中…" : "承認待ちを確認"}
+          </TicketButton>
+        )}
+      </div>
       {employees.length === 0 ? (
         <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "20px 0", textAlign: "center" }}>
           アルバイトがまだ登録されていません。
