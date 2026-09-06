@@ -840,8 +840,8 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
       >
         <span>勤怠 {list.length}件</span>
         <span>合計 {formatYen(totalAmount)}</span>
-        <span>売上バック合計 {formatYen(salesBackTotal)}</span>
-        {salesBackMismatch && (
+        {isAdmin && <span>売上バック合計 {formatYen(salesBackTotal)}</span>}
+        {isAdmin && salesBackMismatch && (
           <span style={{ fontFamily: SANS, background: "#FFF176", color: COLORS.ink, padding: "3px 8px", borderRadius: 4 }}>
             勤怠一覧の売上バックの額を確認して下さい。
           </span>
@@ -968,14 +968,16 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
         </div>
       )}
 
-      <SalesBackBreakdownCard
-        salesHistory={salesHistory}
-        employees={employees}
-        dateMode={dateMode}
-        dateValue={dateValue}
-        viewMode={viewMode}
-        selectedEmployeeId={selectedEmployeeId}
-      />
+      {isAdmin && (
+        <SalesBackBreakdownCard
+          salesHistory={salesHistory}
+          employees={employees}
+          dateMode={dateMode}
+          dateValue={dateValue}
+          viewMode={viewMode}
+          selectedEmployeeId={selectedEmployeeId}
+        />
+      )}
 
       {deletingShiftId && (
         <ConfirmModal
