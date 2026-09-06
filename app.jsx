@@ -195,7 +195,7 @@ const HEADER_CLOCK_FONT_SIZE = 11;
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/06 12:16";
+const APP_LAST_UPDATED = "2026/09/06 12:23";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -1194,7 +1194,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
 /* ---------------------------------------------------------
    人数入力モーダル
 --------------------------------------------------------- */
-function GuestCountModal({ seatNum, employees, onConfirm, onCancel }) {
+function GuestCountModal({ seatNum, employees, onConfirm, onCancel, currentEmployeeName }) {
   const [count, setCount] = useState(2);
   const [companionKind, setCompanionKind] = useState(""); // "" | "call" | "companion"
   const [companionName, setCompanionName] = useState("");
@@ -1204,7 +1204,10 @@ function GuestCountModal({ seatNum, employees, onConfirm, onCancel }) {
     if (!companionKind) {
       setCompanionName("");
     } else if (!companionName && employees.length > 0) {
-      setCompanionName(employees[0].name);
+      // ログイン中の本人が対応するケースが多いため、まず自分自身を初期選択する
+      // (自分が一覧に無い場合は従来通り先頭の従業員にフォールバック)。
+      const defaultName = employees.some((e) => e.name === currentEmployeeName) ? currentEmployeeName : employees[0].name;
+      setCompanionName(defaultName);
     }
   }, [companionKind, employees]);
 
@@ -4548,7 +4551,7 @@ function App() {
       })()}
 
       {guestModalSeat !== null && (
-        <GuestCountModal seatNum={guestModalSeat} employees={(data.payroll?.employees || []).filter((e) => e.active !== false)} onConfirm={handleConfirmGuests} onCancel={() => setGuestModalSeat(null)} />
+        <GuestCountModal seatNum={guestModalSeat} employees={(data.payroll?.employees || []).filter((e) => e.active !== false)} onConfirm={handleConfirmGuests} onCancel={() => setGuestModalSeat(null)} currentEmployeeName={myEmployee?.name} />
       )}
 
       {pendingLockTab && (
