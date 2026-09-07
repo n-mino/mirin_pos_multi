@@ -75,7 +75,11 @@ function payrollRankColor(rankKey) {
 
 function payrollShiftTotal(shift, employees, rankBonusRates) {
   const emp = employees.find((e) => e.id === shift.employeeId);
-  const wage = (emp ? emp.hourlyWage : 0) + payrollRankBonus(rankBonusRates, shift.rankKey);
+  // 支払い済み(paidDate)かつ固定済みの時給(frozenWage)があれば、時給・ランク別
+  // 時給アップ額のマスタを後から変更してもそちらを使わず、固定値のまま計算する。
+  const wage = (shift.paidDate && shift.frozenWage != null)
+    ? shift.frozenWage
+    : (emp ? emp.hourlyWage : 0) + payrollRankBonus(rankBonusRates, shift.rankKey);
   const minutes = payrollShiftMinutes(shift.startTime, shift.endTime);
   const hours = minutes === null ? 0 : minutes / 60;
   const dailyWage = shift.dailyWage || 0;
@@ -1253,7 +1257,16 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
     const list = shifts.map((s) => {
       if (s.id !== id) return s;
       nowPaid = !s.paidDate;
-      return { ...s, paidDate: s.paidDate ? "" : toDateInputValue(new Date().toISOString()).replaceAll("-", "/") };
+      if (nowPaid) {
+        // 支払い済みにした時点の時給(時給+ランク加算)をレコードへ固定する。
+        // 以降、時給・ランク別時給アップ額のマスタを変更しても、この
+        // 支払い済みレコードの金額は変わらない(payrollShiftTotal参照)。
+        const { wage } = payrollShiftTotal(s, employees, rankBonusRates);
+        return { ...s, paidDate: toDateInputValue(new Date().toISOString()).replaceAll("-", "/"), frozenWage: wage };
+      }
+      // 支払い済みを解除した場合は固定を解除し、現在のマスタ値での計算に戻す
+      const { frozenWage, ...rest } = s;
+      return { ...rest, paidDate: "" };
     });
     onUpdatePayroll({ shifts: list });
     showToast(nowPaid ? "支払い済みにしました" : "支払い未定に戻しました");
