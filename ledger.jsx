@@ -1388,7 +1388,7 @@ function ManualSaleInfoStep({ data, initial, currentEmployeeName, onCancel, onNe
         {companionKind && (
           employees.length === 0 ? (
             <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center" }}>
-              先にマスタ設定の「アルバイトマスタ」でスタッフを登録してください。
+              先にマスタ設定の「従業員マスタ」でスタッフを登録してください。
             </div>
           ) : (
             <select value={companionName} onChange={(e) => setCompanionName(e.target.value)} style={manualEntryInputStyle}>

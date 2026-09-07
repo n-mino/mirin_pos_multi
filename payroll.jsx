@@ -210,7 +210,7 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDe
     <>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <TicketButton variant="primary" onClick={onAdd} icon={Plus}>
-          アルバイトを追加
+          従業員を追加
         </TicketButton>
         {onCheckPending && (
           <TicketButton variant="subtle" onClick={onCheckPending} disabled={checkingPending}>
@@ -220,7 +220,7 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDe
       </div>
       {employees.length === 0 ? (
         <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "20px 0", textAlign: "center" }}>
-          アルバイトがまだ登録されていません。
+          従業員がまだ登録されていません。
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -297,7 +297,7 @@ function EmployeeEditModal({ employee, onCancel, onSave }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20, overflowY: "auto" }}>
       <div style={{ background: COLORS.paper, borderRadius: 12, padding: 24, width: "100%", maxWidth: 380, boxShadow: "0 12px 40px rgba(0,0,0,0.25)", margin: "20px 0" }}>
         <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, marginBottom: 18, color: COLORS.ink }}>
-          {employee.id ? "アルバイトを編集" : "アルバイトを追加"}
+          {employee.id ? "従業員を編集" : "従業員を追加"}
         </div>
 
         <label style={{ fontSize: 12, color: COLORS.inkSoft }}>名前</label>
@@ -327,7 +327,7 @@ function EmployeeEditModal({ employee, onCancel, onSave }) {
   );
 }
 
-// アルバイトマスタ右側の「ランク別時給アップ額」設定。全従業員共通の1時間
+// 従業員マスタ右側の「ランク別時給アップ額」設定。全従業員共通の1時間
 // あたりの加算額を保存する(税・サービス料タブと同じ、ローカルstate→保存ボタンで
 // 一括適用するパターン)。
 function RankBonusSettingsPanel({ rankBonusRates, onSave }) {
@@ -369,7 +369,7 @@ function RankBonusSettingsPanel({ rankBonusRates, onSave }) {
   );
 }
 
-// アルバイトマスタ右側、ランク別時給アップ額の下に配置する「売上バックの率」設定。
+// 従業員マスタ右側、ランク別時給アップ額の下に配置する「売上バックの率」設定。
 // 「小計30,000円超」「5人以上+小計50,000円超」「ボトル関連」いずれも会計確定時に自動計算され、
 // 売上履歴の「売上バック」列に反映される(app.jsxのcomputeSalesBackAmount参照。3者を合算はせず、
 // 最も大きい額を採用する)。「ボトル関連」は商品管理で「ボトルバック」を有効にした商品の
@@ -473,7 +473,7 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
 
   const handleSubmit = () => {
     if (employees.length === 0) {
-      setError("先にアルバイトを登録してください。");
+      setError("先に従業員を登録してください。");
       return;
     }
     const minutes = payrollShiftMinutes(form.startTime, form.endTime);
@@ -515,7 +515,7 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
 
       {employees.length === 0 ? (
         <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "20px 0", textAlign: "center" }}>
-          先にマスタ設定の「アルバイトマスタ」でスタッフを登録してください。
+          先にマスタ設定の「従業員マスタ」でスタッフを登録してください。
         </div>
       ) : (
         <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
