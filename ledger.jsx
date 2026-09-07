@@ -1223,7 +1223,10 @@ function SalesManagementScreen({ data, onUpdateCashFlow, onOpenSettings, activeH
         right={<HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" />}
       />
 
-      <HomeTabBar active={activeHomeTab} onSelect={onSelectHomeTab} />
+      {/* role未指定だとHomeTabBarが「売上管理」タブ自体を隠してしまう
+          (role==="admin"の判定に一致しないため)。この画面はApp.jsx側で
+          既にmyEmployee?.role==="admin"のときしか描画されないので固定値でよい。 */}
+      <HomeTabBar active={activeHomeTab} onSelect={onSelectHomeTab} role="admin" />
 
       <div style={{ display: "flex", gap: 6, padding: "12px 20px", borderBottom: `1px solid ${COLORS.line}`, background: COLORS.paper, overflowX: "auto" }}>
         {SALES_MANAGEMENT_TABS.map((t) => (
