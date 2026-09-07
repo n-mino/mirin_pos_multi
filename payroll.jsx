@@ -205,7 +205,7 @@ function TimeStepSelect({ value, onChange }) {
 /* ---------------------------------------------------------
    アルバイト管理
 --------------------------------------------------------- */
-function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDemote, currentEmployeeId, onCheckPending, checkingPending, onResetPassword, resettingPasswordId }) {
+function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onCheckPending, checkingPending }) {
   return (
     <>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -249,25 +249,6 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDe
                 <div style={{ fontSize: 12, color: COLORS.inkSoft, fontFamily: MONO }}>時給 {formatYen(emp.hourlyWage)}</div>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
-                {onPromote && emp.role !== "admin" && (
-                  <button onClick={() => onPromote(emp.id)} style={{ ...payrollIconBtnStyle, width: "auto", padding: "0 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
-                    管理者にする
-                  </button>
-                )}
-                {onDemote && emp.role === "admin" && emp.id !== currentEmployeeId && (
-                  <button onClick={() => onDemote(emp.id)} style={{ ...payrollIconBtnStyle, width: "auto", padding: "0 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
-                    管理者から外す
-                  </button>
-                )}
-                {onResetPassword && emp.authUserId && (
-                  <button
-                    onClick={() => onResetPassword(emp)}
-                    disabled={resettingPasswordId === emp.id}
-                    style={{ ...payrollIconBtnStyle, width: "auto", padding: "0 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}
-                  >
-                    {resettingPasswordId === emp.id ? "発行中…" : "パスワード再発行"}
-                  </button>
-                )}
                 <button onClick={() => onEdit(emp)} style={payrollIconBtnStyle}>
                   <Pencil size={14} />
                 </button>
@@ -283,7 +264,7 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onPromote, onDe
   );
 }
 
-function EmployeeEditModal({ employee, onCancel, onSave }) {
+function EmployeeEditModal({ employee, onCancel, onSave, onPromote, onDemote, onResetPassword, currentEmployeeId, resettingPasswordId }) {
   const [name, setName] = useState(employee.name || "");
   const [wage, setWage] = useState(employee.hourlyWage != null ? String(employee.hourlyWage) : "1800");
 
@@ -291,6 +272,13 @@ function EmployeeEditModal({ employee, onCancel, onSave }) {
 
   const handleSave = () => {
     onSave({ ...employee, name: name.trim(), hourlyWage: Number(wage) });
+  };
+
+  // 管理者昇格/降格・パスワード再発行は結果が従業員一覧に即反映されるため、
+  // 実行したらこのモーダル自体も閉じる(開いたまま古いrole表示が残るのを防ぐ)。
+  const runAndClose = (action) => {
+    action();
+    onCancel();
   };
 
   return (
@@ -322,6 +310,30 @@ function EmployeeEditModal({ employee, onCancel, onSave }) {
           <TicketButton variant="ghost" onClick={onCancel} style={{ flex: 1 }}>キャンセル</TicketButton>
           <TicketButton variant="primary" disabled={!valid} onClick={handleSave} style={{ flex: 1 }}>保存</TicketButton>
         </div>
+
+        {employee.id && (onPromote || onDemote || onResetPassword) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 28 }}>
+            {onPromote && employee.role !== "admin" && (
+              <TicketButton variant="primary" onClick={() => runAndClose(() => onPromote(employee.id))}>
+                管理者にする
+              </TicketButton>
+            )}
+            {onDemote && employee.role === "admin" && employee.id !== currentEmployeeId && (
+              <TicketButton variant="primary" onClick={() => runAndClose(() => onDemote(employee.id))}>
+                管理者から外す
+              </TicketButton>
+            )}
+            {onResetPassword && employee.authUserId && (
+              <TicketButton
+                variant="primary"
+                disabled={resettingPasswordId === employee.id}
+                onClick={() => runAndClose(() => onResetPassword(employee))}
+              >
+                {resettingPasswordId === employee.id ? "発行中…" : "パスワード再発行"}
+              </TicketButton>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

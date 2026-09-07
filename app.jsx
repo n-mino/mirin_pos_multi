@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/07 17:07";
+const APP_LAST_UPDATED = "2026/09/07 17:24";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -3169,13 +3169,8 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 onAdd={() => setEditingEmployee({})}
                 onEdit={(emp) => setEditingEmployee(emp)}
                 onDelete={(id) => setDeletingEmployeeId(id)}
-                onPromote={promoteToAdmin}
-                onDemote={demoteFromAdmin}
-                currentEmployeeId={myEmployee?.id}
                 onCheckPending={checkPendingApprovals}
                 checkingPending={checkingPending}
-                onResetPassword={resetEmployeePassword}
-                resettingPasswordId={resettingPasswordId}
               />
               {data.payroll.employees.some((e) => e.active === false) && (
                 <div style={{ marginTop: 20 }}>
@@ -3459,6 +3454,11 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
           employee={editingEmployee}
           onCancel={() => setEditingEmployee(null)}
           onSave={saveEmployee}
+          onPromote={promoteToAdmin}
+          onDemote={demoteFromAdmin}
+          onResetPassword={resetEmployeePassword}
+          currentEmployeeId={myEmployee?.id}
+          resettingPasswordId={resettingPasswordId}
         />
       )}
 
