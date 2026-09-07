@@ -188,14 +188,23 @@ const SANS = "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', s
 const STORAGE_KEY = "pos-app-data-v1";
 
 // ヘッダーの時計表示のフォントサイズ(px)。タブレットのシステム時計と見た目上
-// 重なってしまうため、アプリ全体をこの分だけ下にずらす(このファイル内の
+// 重なってしまうため、アプリ全体を最低でもこの分だけ下にずらす(このファイル内の
 // pos-app-shellのmarginTop/heightと、index.html内の対応するCSSで使用)。
 const HEADER_CLOCK_FONT_SIZE = 11;
+
+// アプリ全体を下にずらす実際の量。ホーム画面に追加したPWA(standalone表示)を
+// ノッチ/Dynamic Island付きのスマートフォンで開くと、この11pxだけでは
+// 端末のステータスバー・Dynamic Islandの下に隠れず、ヘッダーの戻るボタンや
+// タイトルと重なって表示されてしまっていた。env(safe-area-inset-top)で
+// 端末ごとの実際のセーフエリア量を取得し、11pxとの大きい方を採用することで、
+// ノッチ無しのタブレット(safe-area-inset-topは0)では従来通りの見た目を保ちつつ、
+// ノッチ/Dynamic Island付き端末では自動的に十分な余白を確保する。
+const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-top, 0px))`;
 
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/07 08:47";
+const APP_LAST_UPDATED = "2026/09/07 14:20";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -4664,8 +4673,8 @@ function App() {
         fontFamily: SANS,
         background: COLORS.bg,
         color: COLORS.ink,
-        marginTop: HEADER_CLOCK_FONT_SIZE,
-        height: `calc(100vh - ${HEADER_CLOCK_FONT_SIZE}px)`,
+        marginTop: HEADER_TOP_OFFSET,
+        height: `calc(100vh - ${HEADER_TOP_OFFSET})`,
         maxHeight: 780 - HEADER_CLOCK_FONT_SIZE,
         display: "flex",
         flexDirection: "column",

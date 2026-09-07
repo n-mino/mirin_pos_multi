@@ -59,10 +59,11 @@
   }
   /* アドレスバーの出し引きでビューポート高さが変動する端末でも
      コンテンツが隠れないよう、対応ブラウザでは動的ビューポート単位を使う。
-     11pxはapp.jsxのHEADER_CLOCK_FONT_SIZEと合わせること(タブレットの
-     システム時計とアプリのヘッダー時計が重ならないよう下にずらす分)。 */
+     max(11px, env(safe-area-inset-top))はapp.jsxのHEADER_TOP_OFFSETと
+     合わせること(タブレットのシステム時計と重ならないための最低11px、
+     ノッチ/Dynamic Island付きスマートフォンではそちらの実際のセーフエリア量を優先)。 */
   @supports (height: 100dvh) {
-    .pos-app-shell { height: calc(100dvh - 11px) !important; }
+    .pos-app-shell { height: calc(100dvh - max(11px, env(safe-area-inset-top, 0px))) !important; }
   }
 </style>
 </head>
