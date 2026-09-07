@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/07 14:20";
+const APP_LAST_UPDATED = "2026/09/07 15:23";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -3823,7 +3823,7 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>ユーザー名</div>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>{mode === "signup" ? "ユーザー名（ログイン用）" : "ユーザー名"}</div>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
