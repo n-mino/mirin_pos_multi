@@ -567,9 +567,9 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
             )}
           </div>
 
-          <div>
+          <div style={{ minWidth: 0 }}>
             <label style={{ fontSize: 12, color: COLORS.inkSoft }}>日付</label>
-            <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
+            <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO, minWidth: 0 }} />
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
