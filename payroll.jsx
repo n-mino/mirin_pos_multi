@@ -770,10 +770,12 @@ function StaffCloseShiftControl({ shift, onSave }) {
     setEditing(false);
   };
 
-  // 一覧の「時間」列は幅が狭い(SHIFT_TABLE_COLS)ため、編集フォームは
-  // その場に埋め込まず、絶対配置のポップオーバーとして下に出す。
+  // 一覧は横スクロールする幅広テーブル(SHIFT_TABLE_COLS)のため、セルに埋め込む
+  // ポップオーバーだと画面外に隠れてしまう(スマホでの実機確認で発覚)。
+  // 他のモーダル(ConfirmModal等)と同じ画面中央固定オーバーレイにして、
+  // スクロール位置・画面幅に関係なく必ず見える位置に表示する。
   return (
-    <span style={{ position: "relative", display: "inline-block" }}>
+    <>
       <button
         onClick={() => { setEditing(true); setEndTime(""); setError(""); }}
         style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, textDecoration: "underline", background: "transparent", border: "none", cursor: "pointer", padding: 0, marginLeft: 6 }}
@@ -781,24 +783,24 @@ function StaffCloseShiftControl({ shift, onSave }) {
         退勤時刻を入力
       </button>
       {editing && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 20, minWidth: 170,
-            display: "flex", flexDirection: "column", gap: 6,
-            background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 8,
-            padding: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
-          }}
-        >
-          <TimeStepSelect value={endTime} onChange={setEndTime} />
-          <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={handleSave} style={{ ...payrollPillStyle(true), padding: "4px 10px", fontSize: 11 }}>保存</button>
-            <button onClick={() => setEditing(false)} style={{ ...payrollPillStyle(false), padding: "4px 10px", fontSize: 11 }}>キャンセル</button>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 150, padding: 20, overflowY: "auto" }}>
+          <div style={{ background: COLORS.paper, borderRadius: 12, padding: 24, width: "100%", maxWidth: 300, boxShadow: "0 12px 40px rgba(0,0,0,0.25)", margin: "20px 0" }}>
+            <div style={{ fontFamily: DISPLAY, fontSize: 17, fontWeight: 700, marginBottom: 4, color: COLORS.ink }}>
+              退勤時刻を入力
+            </div>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 16 }}>
+              {shift.date} {shift.startTime}〜
+            </div>
+            <TimeStepSelect value={endTime} onChange={setEndTime} />
+            {error && <div style={{ color: COLORS.brick, fontSize: 12, marginTop: 10 }}>{error}</div>}
+            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+              <TicketButton variant="ghost" onClick={() => setEditing(false)} style={{ flex: 1 }}>キャンセル</TicketButton>
+              <TicketButton variant="primary" onClick={handleSave} style={{ flex: 1 }}>保存</TicketButton>
+            </div>
           </div>
-          {error && <div style={{ color: COLORS.brick, fontSize: 10.5, fontFamily: SANS }}>{error}</div>}
         </div>
       )}
-    </span>
+    </>
   );
 }
 
