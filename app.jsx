@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/07 17:48";
+const APP_LAST_UPDATED = "2026/09/08 11:24";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -669,6 +669,9 @@ function shiftToSupabaseRow(s) {
     option2: s.option2 || 0,
     note: s.note || "",
     paid_date: s.paidDate || null,
+    // 支払い済みにした時点の固定時給(payrollShiftTotal参照)。他端末でも
+    // 同じ固定値を使えるよう同期する(未固定はnull、支払い解除時もnullに戻す)。
+    frozen_wage: s.frozenWage ?? null,
   };
 }
 
@@ -685,6 +688,7 @@ function supabaseRowToShift(row) {
     option2: row.option2 || 0,
     note: row.note || "",
     paidDate: row.paid_date || "",
+    frozenWage: row.frozen_wage ?? null,
   };
 }
 

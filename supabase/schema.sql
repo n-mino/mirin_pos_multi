@@ -52,6 +52,7 @@ create table if not exists public.shifts (
   option2 numeric not null default 0,
   note text not null default '',
   paid_date date,
+  frozen_wage numeric,                                    -- 支払い済みにした時点の固定時給(nullは未固定)
   created_at timestamptz not null default now()
 );
 
