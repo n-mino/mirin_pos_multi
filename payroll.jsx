@@ -21,8 +21,10 @@ const PAYROLL_EMPLOYEE_COLORS = [
 ];
 
 function payrollShiftMinutes(startTime, endTime) {
-  const [sh, sm] = (startTime || "0:0").split(":").map(Number);
-  const [eh, em] = (endTime || "0:0").split(":").map(Number);
+  // 終了時刻が未入力(勤務中)の場合は計算不可。開始時刻と終了時刻が同時刻の場合(0分)もnullを返す。
+  if (!startTime || !endTime) return null;
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
   const startMin = (sh || 0) * 60 + (sm || 0);
   const endMin = (eh || 0) * 60 + (em || 0);
   let diff = endMin - startMin;
@@ -492,10 +494,22 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
       setError("先に従業員を登録してください。");
       return;
     }
-    const minutes = payrollShiftMinutes(form.startTime, form.endTime);
-    if (minutes === null) {
+    if (!form.startTime) {
+      setError("開始時刻を入力してください。");
+      return;
+    }
+    // 終了時刻は空欄のまま保存できる(「勤務中」として扱う。退勤時刻は後から編集で入力する)。
+    if (form.endTime && form.startTime === form.endTime) {
       setError("開始時刻と終了時刻が同じです。正しい時刻を入力してください。");
       return;
+    }
+    // 同じ従業員が同時に複数の「勤務中」を持たないようにする(日付をまたいでチェック)。
+    if (!form.endTime) {
+      const hasOtherOpenShift = shifts.some((s) => s.id !== editingShift?.id && s.employeeId === form.employeeId && !s.endTime);
+      if (hasOtherOpenShift) {
+        setError("この従業員には既に「勤務中」(終了時刻未入力)の勤怠があります。先にそちらの終了時刻を入力してください。");
+        return;
+      }
     }
     const newRange = payrollShiftRange(form.startTime, form.endTime);
     const hasOverlap = shifts.some((s) => {
@@ -564,8 +578,11 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
               <TimeStepSelect value={form.startTime} onChange={(v) => setField("startTime", v)} />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>終了時刻(15分単位)</label>
+              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>終了時刻(15分単位・空欄可)</label>
               <TimeStepSelect value={form.endTime} onChange={(v) => setField("endTime", v)} />
+              <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 4 }}>
+                空欄のまま保存すると「勤務中」として記録され、退勤時刻は後から編集で入力できます
+              </div>
             </div>
           </div>
 
@@ -726,7 +743,66 @@ function SalesBackBreakdownCard({ salesHistory, employees, dateMode, dateValue, 
   );
 }
 
-function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdit, onDelete, onTogglePaid, lockedEmployeeId, isAdmin = true }) {
+// スタッフ側の勤怠一覧で、自分の「勤務中」(終了時刻未入力)の行にだけ出す、
+// 終了時刻だけを入力する専用の狭いコントロール。汎用の編集フォーム
+// (ShiftEntryPanel、開始時刻・ランク・メモ等も変更できてしまう)は開放しない。
+// 開始・終了時刻とも入力済みになった行はこのコントロール自体が出なくなり、
+// 以降の修正は管理者側の編集画面で行う運用。
+function StaffCloseShiftControl({ shift, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [endTime, setEndTime] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSave = () => {
+    if (!endTime) {
+      setError("終了時刻を選択してください。");
+      return;
+    }
+    if (endTime === shift.startTime) {
+      setError("開始時刻と同じです。正しい時刻を選択してください。");
+      return;
+    }
+    const result = onSave(shift.id, endTime) || {};
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setEditing(false);
+  };
+
+  // 一覧の「時間」列は幅が狭い(SHIFT_TABLE_COLS)ため、編集フォームは
+  // その場に埋め込まず、絶対配置のポップオーバーとして下に出す。
+  return (
+    <span style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={() => { setEditing(true); setEndTime(""); setError(""); }}
+        style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, textDecoration: "underline", background: "transparent", border: "none", cursor: "pointer", padding: 0, marginLeft: 6 }}
+      >
+        退勤時刻を入力
+      </button>
+      {editing && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 20, minWidth: 170,
+            display: "flex", flexDirection: "column", gap: 6,
+            background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 8,
+            padding: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+          }}
+        >
+          <TimeStepSelect value={endTime} onChange={setEndTime} />
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={handleSave} style={{ ...payrollPillStyle(true), padding: "4px 10px", fontSize: 11 }}>保存</button>
+            <button onClick={() => setEditing(false)} style={{ ...payrollPillStyle(false), padding: "4px 10px", fontSize: 11 }}>キャンセル</button>
+          </div>
+          {error && <div style={{ color: COLORS.brick, fontSize: 10.5, fontFamily: SANS }}>{error}</div>}
+        </div>
+      )}
+    </span>
+  );
+}
+
+function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdit, onDelete, onTogglePaid, onStaffCloseShift, lockedEmployeeId, isAdmin = true }) {
   // スタッフには「操作」列(支払い/編集・削除ボタン)自体を見せない
   // (自分の勤怠を自分で編集・削除できないようにする、管理者のみの機能)。
   const shiftTableCols = isAdmin ? SHIFT_TABLE_COLS : SHIFT_TABLE_COLS.split(" ").slice(1).join(" ");
@@ -759,8 +835,9 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
   });
   list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
-  const totalAmount = list.reduce((sum, s) => sum + payrollShiftTotal(s, employees, rankBonusRates).total, 0);
-  const salesBackTotal = list.reduce((sum, s) => sum + (s.option2 || 0), 0);
+  // 終了時刻未入力(勤務中)の勤怠は、まだ金額が確定していないため合計から除外する。
+  const totalAmount = list.reduce((sum, s) => (s.endTime ? sum + payrollShiftTotal(s, employees, rankBonusRates).total : sum), 0);
+  const salesBackTotal = list.reduce((sum, s) => (s.endTime ? sum + (s.option2 || 0) : sum), 0);
   // 「売上バック内訳」カードの合計と突き合わせ、勤怠側の手入力額とずれていないか確認する。
   // dateMode==="all"のときは内訳カード自体が非表示(比較対象がない)ため警告も出さない。
   const salesBackBreakdown = computeSalesBackBreakdown(salesHistory, employees, dateMode, dateValue, viewMode, selectedEmployeeId);
@@ -772,7 +849,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
       const emp = employees.find((e) => e.id === shift.employeeId);
       const { hours, total, wage } = payrollShiftTotal(shift, employees, rankBonusRates);
       rows.push([
-        shift.date, emp ? emp.name : "(削除済み)", shift.startTime, shift.endTime, formatHours(hours),
+        shift.date, emp ? emp.name : "(削除済み)", shift.startTime, shift.endTime || "勤務中", shift.endTime ? formatHours(hours) : "勤務中",
         wage, payrollRankLabel(shift.rankKey), shift.dailyWage || 0, shift.option || 0, shift.option2 || 0, total,
         shift.note || "", shift.paidDate || "",
       ]);
@@ -921,7 +998,8 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                   <div style={{ display: "flex", gap: 4 }}>
                     <button
                       onClick={() => onTogglePaid(shift.id)}
-                      title={shift.paidDate ? "支払い済みを解除" : "支払い済みにする"}
+                      disabled={!shift.paidDate && !shift.endTime}
+                      title={shift.paidDate ? "支払い済みを解除" : (shift.endTime ? "支払い済みにする" : "終了時刻が未入力のため支払いできません")}
                       style={{
                         ...payrollIconBtnStyle,
                         width: 26,
@@ -929,6 +1007,8 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                         background: shift.paidDate ? COLORS.sage : "transparent",
                         border: `1px solid ${shift.paidDate ? COLORS.sage : COLORS.line}`,
                         color: shift.paidDate ? COLORS.paper : COLORS.inkSoft,
+                        opacity: !shift.paidDate && !shift.endTime ? 0.4 : 1,
+                        cursor: !shift.paidDate && !shift.endTime ? "not-allowed" : "pointer",
                       }}
                     >
                       <Banknote size={12} />
@@ -945,8 +1025,14 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                   <div style={{ fontFamily: SANS, color: COLORS.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {emp ? emp.name : "(削除済み)"}
                   </div>
-                  <div>{shift.startTime}-{shift.endTime}</div>
-                  <div>{formatHours(hours)}</div>
+                  <div>
+                    {shift.startTime}-
+                    {shift.endTime || <span style={{ color: COLORS.amber, fontWeight: 700 }}>勤務中</span>}
+                    {!isAdmin && !shift.endTime && (
+                      <StaffCloseShiftControl shift={shift} onSave={onStaffCloseShift} />
+                    )}
+                  </div>
+                  <div>{shift.endTime ? formatHours(hours) : "-"}</div>
                   <div>{emp ? formatNum(wage) : "-"}</div>
                   <div>
                     {shift.rankKey ? (
@@ -1253,6 +1339,11 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
   };
 
   const togglePaidDate = (id) => {
+    const target = shifts.find((s) => s.id === id);
+    if (target && !target.paidDate && !target.endTime) {
+      showToast("終了時刻が未入力のため支払い済みにできません");
+      return;
+    }
     let nowPaid = false;
     const list = shifts.map((s) => {
       if (s.id !== id) return s;
@@ -1270,6 +1361,23 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
     });
     onUpdatePayroll({ shifts: list });
     showToast(nowPaid ? "支払い済みにしました" : "支払い未定に戻しました");
+  };
+
+  // スタッフが自分の「勤務中」の勤怠に終了時刻だけを入力する専用の狭い更新処理。
+  // 汎用の編集(開始時刻・ランク・メモ等)は含めない(管理者専用のまま)。
+  const staffCloseShift = (id, endTime) => {
+    const shift = shifts.find((s) => s.id === id);
+    if (!shift) return { error: "対象の勤怠が見つかりません。" };
+    const newRange = payrollShiftRange(shift.startTime, endTime);
+    const hasOverlap = shifts.some((s) => {
+      if (s.id === id) return false;
+      if (s.employeeId !== shift.employeeId || s.date !== shift.date) return false;
+      return payrollShiftRangesOverlap(newRange, payrollShiftRange(s.startTime, s.endTime));
+    });
+    if (hasOverlap) return { error: "同じ日に時間帯が重複する勤怠データがすでに存在します。" };
+    onUpdatePayroll({ shifts: shifts.map((s) => (s.id === id ? { ...s, endTime } : s)) });
+    showToast("退勤時刻を保存しました");
+    return {};
   };
 
   const editingShift = editingShiftId ? shifts.find((s) => s.id === editingShiftId) || null : null;
@@ -1343,6 +1451,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
             onEdit={(id) => { setEditingShiftId(id); setTab("entry"); }}
             onDelete={deleteShift}
             onTogglePaid={togglePaidDate}
+            onStaffCloseShift={staffCloseShift}
             lockedEmployeeId={isAdmin ? null : myEmployee?.id}
             isAdmin={isAdmin}
           />
