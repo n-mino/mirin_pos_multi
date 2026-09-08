@@ -17,6 +17,7 @@ create table if not exists public.employees (
   auth_user_id uuid unique references auth.users(id) on delete set null,
   approved boolean not null default false,
   active boolean not null default true,                  -- false=退職済み(勤怠実績が残るため物理削除せず無効化)
+  login_username text,                                    -- 自己登録時のログイン用ユーザー名の平文(管理者直接追加の場合はnull)
   created_at timestamptz not null default now()
 );
 

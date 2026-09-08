@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/08 20:23";
+const APP_LAST_UPDATED = "2026/09/08 20:36";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -2685,6 +2685,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
           approved: r.approved,
           active: r.active ?? true,
           authUserId: r.auth_user_id,
+          loginUsername: r.login_username || "",
         }));
         onUpdatePayroll({ employees: mapped });
         const count = mapped.filter((e) => e.approved === false).length;
@@ -3240,7 +3241,14 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {pendingEmployees.map((e) => (
                       <div key={e.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, borderRadius: 8, padding: "8px 12px" }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink }}>{e.name}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink }}>
+                          {e.name}
+                          {e.loginUsername && (
+                            <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.inkSoft, fontFamily: MONO }}>
+                              （{e.loginUsername}）
+                            </span>
+                          )}
+                        </span>
                         <TicketButton variant="primary" onClick={() => approveEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
                           承認する
                         </TicketButton>
@@ -3263,7 +3271,12 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {data.payroll.employees.filter((e) => e.active === false).map((e) => (
                       <div key={e.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", opacity: 0.7 }}>
-                        <span style={{ fontSize: 13.5, color: COLORS.inkSoft }}>{e.name}</span>
+                        <span style={{ fontSize: 13.5, color: COLORS.inkSoft }}>
+                          {e.name}
+                          {e.loginUsername && (
+                            <span style={{ fontSize: 12, fontFamily: MONO }}>（{e.loginUsername}）</span>
+                          )}
+                        </span>
                         <TicketButton variant="ghost" onClick={() => reactivateEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
                           復帰させる
                         </TicketButton>
@@ -3861,12 +3874,12 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
         // (signUp直後だと新しいセッションのトークンがまだ反映しきっておらず、
         //  ここでinsertするとRLSの認証チェックに失敗する競合が起きるため)。
         // signUp()自体が内部でセッションを確定させ、そのタイミングでApp側の
-        // onAuthStateChangeが発火し得るため、表示名は必ずsignUp()を呼ぶ前に
+        // onAuthStateChangeが発火し得るため、表示名・ユーザー名は必ずsignUp()を呼ぶ前に
         // (この行より後でawaitが一切無い、同期的なタイミングで)渡しておく。
-        onSignupStart(displayName.trim());
+        onSignupStart(displayName.trim(), username.trim());
         const { error: err } = await window.supabaseClient.auth.signUp({ email, password });
         if (err) {
-          onSignupStart(null); // 失敗時はクリア(次回の登録に古い表示名が誤って使われないように)
+          onSignupStart(null, null); // 失敗時はクリア(次回の登録に古い表示名・ユーザー名が誤って使われないように)
           throw err;
         }
         setSignedUp(true);
@@ -4080,6 +4093,7 @@ function App() {
   const [confirmingLogout, setConfirmingLogout] = useState(false); // 読み込みタイムアウト画面のログアウト確認用
   const dataRef = useRef(null);
   const pendingSignupNameRef = useRef(null); // 新規登録直後、まだemployees行が無い場合の表示名の一時保管
+  const pendingSignupUsernameRef = useRef(null); // 同上、ログイン用ユーザー名(平文)の一時保管
 
   // Supabaseのログインセッション監視(フェーズ2)
   useEffect(() => {
@@ -4128,10 +4142,12 @@ function App() {
       let mine = (rows || []).find((r) => r.auth_user_id === authSession.user.id) || null;
       if (!mine && pendingSignupNameRef.current) {
         const name = pendingSignupNameRef.current;
+        const loginUsername = pendingSignupUsernameRef.current;
         pendingSignupNameRef.current = null;
+        pendingSignupUsernameRef.current = null;
         const { data: inserted, error: insertErr } = await window.supabaseClient
           .from("employees")
-          .insert({ id: uid("emp"), name, hourly_wage: 1800, role: "staff", auth_user_id: authSession.user.id, approved: false })
+          .insert({ id: uid("emp"), name, hourly_wage: 1800, role: "staff", auth_user_id: authSession.user.id, approved: false, login_username: loginUsername || null })
           .select()
           .single();
         if (cancelled) return;
@@ -4152,6 +4168,7 @@ function App() {
           approved: r.approved,
           active: r.active ?? true,
           authUserId: r.auth_user_id,
+          loginUsername: r.login_username || "",
         }));
         persist({ ...dataRef.current, payroll: { ...dataRef.current.payroll, employees: mapped } });
       }
@@ -4174,7 +4191,7 @@ function App() {
           if (idx >= 0) employees.splice(idx, 1);
         } else {
           const r = payload.new;
-          const mapped = { id: r.id, name: r.name, hourlyWage: r.hourly_wage, role: r.role, approved: r.approved, active: r.active ?? true, authUserId: r.auth_user_id };
+          const mapped = { id: r.id, name: r.name, hourlyWage: r.hourly_wage, role: r.role, approved: r.approved, active: r.active ?? true, authUserId: r.auth_user_id, loginUsername: r.login_username || "" };
           const idx = employees.findIndex((e) => e.id === mapped.id);
           if (idx >= 0) employees[idx] = mapped;
           else employees.push(mapped);
@@ -4562,7 +4579,7 @@ function App() {
   }
 
   if (authSession === null) {
-    return <LoginScreen onLoggedIn={() => {}} onSignupStart={(name) => { pendingSignupNameRef.current = name; }} />;
+    return <LoginScreen onLoggedIn={() => {}} onSignupStart={(name, username) => { pendingSignupNameRef.current = name; pendingSignupUsernameRef.current = username; }} />;
   }
 
   if (!myEmployee) {

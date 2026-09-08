@@ -245,7 +245,14 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onCheckPending,
             >
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>{emp.name}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>
+                    {emp.name}
+                    {emp.loginUsername && (
+                      <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.inkSoft, fontFamily: MONO }}>
+                        （{emp.loginUsername}）
+                      </span>
+                    )}
+                  </span>
                   {emp.role === "admin" && (
                     <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.teal, border: `1px solid ${COLORS.teal}`, borderRadius: 4, padding: "1px 5px" }}>
                       管理者
