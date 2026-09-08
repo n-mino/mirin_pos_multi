@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/08 14:09";
+const APP_LAST_UPDATED = "2026/09/08 15:14";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -2463,6 +2463,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
   const isNarrow = useMediaQuery("(max-width: 720px)");
   const [tab, setTab] = useState("products");
   const [editing, setEditing] = useState(null); // product being edited, or {} for new
+  const [activeProductCat, setActiveProductCat] = useState(""); // "" = すべて
   const [editingEmployee, setEditingEmployee] = useState(null); // null | {} | employee
   const [deletingEmployeeId, setDeletingEmployeeId] = useState(null);
   const [serviceInput, setServiceInput] = useState(String(data.serviceChargeRate ?? 0));
@@ -2923,13 +2924,64 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 20, maxWidth: (tab === "seats" || tab === "staff") ? "none" : 560, margin: "0 auto", width: "100%" }}>
-        {tab === "products" && (
+        {tab === "products" && (() => {
+          const productCategories = Array.from(new Set([...PRODUCT_DEFAULT_CATEGORIES, ...data.products.map((p) => p.category)])).filter((c) =>
+            data.products.some((p) => p.category === c)
+          );
+          const visibleProducts = [...data.products]
+            .filter((p) => !activeProductCat || p.category === activeProductCat)
+            .sort((a, b) => {
+              const ai = productCategories.indexOf(a.category);
+              const bi = productCategories.indexOf(b.category);
+              if (ai !== bi) return ai - bi;
+              return a.name.localeCompare(b.name, "ja");
+            });
+          return (
           <>
-            <TicketButton variant="primary" onClick={() => setEditing({})} icon={Plus} style={{ marginBottom: 16 }}>
-              商品を追加
-            </TicketButton>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <TicketButton variant="primary" onClick={() => setEditing({})} icon={Plus}>
+                商品を追加
+              </TicketButton>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <button
+                  onClick={() => setActiveProductCat("")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 20,
+                    border: `1.5px solid ${activeProductCat === "" ? COLORS.teal : COLORS.line}`,
+                    background: activeProductCat === "" ? COLORS.teal : "transparent",
+                    color: activeProductCat === "" ? "#FBF9F4" : COLORS.inkSoft,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                  }}
+                >
+                  すべて
+                </button>
+                {productCategories.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setActiveProductCat(c)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 20,
+                      border: `1.5px solid ${activeProductCat === c ? COLORS.teal : COLORS.line}`,
+                      background: activeProductCat === c ? COLORS.teal : "transparent",
+                      color: activeProductCat === c ? "#FBF9F4" : COLORS.inkSoft,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {data.products.map((p) => (
+              {visibleProducts.map((p) => (
                 <div
                   key={p.id}
                   style={{
@@ -2988,7 +3040,8 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
               ))}
             </div>
           </>
-        )}
+          );
+        })()}
 
         {tab === "seats" && (
           <div style={{ display: "flex", flexDirection: isNarrow ? "column" : "row", gap: 20 }}>
