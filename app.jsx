@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/08 19:08";
+const APP_LAST_UPDATED = "2026/09/08 19:17";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -1093,6 +1093,7 @@ function Toast({ message }) {
    トップ画面(座席一覧)
 --------------------------------------------------------- */
 function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onSelectHomeTab, role, onLogout, myEmployee, pendingCount, onChangePassword }) {
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
   const todayTotal = data.salesHistory
     .filter((s) => isToday(s.endTime) && isSaleActive(s))
     .reduce((sum, s) => sum + s.total, 0);
@@ -1101,6 +1102,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
   const seatNums = Array.from({ length: data.seatCount }, (_, i) => i + 1);
 
   return (
+    <>
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header
         title="座席一覧"
@@ -1119,7 +1121,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
               <HeaderIconButton icon={Settings} onClick={onOpenSettings} title="マスタ設定" badge={pendingCount} />
             ) : (
               <button
-                onClick={onLogout}
+                onClick={() => setConfirmingLogout(true)}
                 style={{
                   padding: "6px 12px",
                   borderRadius: 14,
@@ -1273,6 +1275,10 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
         </div>
       </div>
     </div>
+    {confirmingLogout && (
+      <LogoutConfirmModal onCancel={() => setConfirmingLogout(false)} onConfirm={onLogout} />
+    )}
+    </>
   );
 }
 
@@ -1420,7 +1426,8 @@ function GuestCountModal({ seatNum, employees, onConfirm, onCancel, currentEmplo
   );
 }
 
-function ConfirmModal({ title, message, confirmLabel = "OK", onConfirm, onCancel }) {
+function ConfirmModal({ title, message, confirmLabel = "OK", confirmVariant = "danger", onConfirm, onCancel }) {
+  const accentColor = confirmVariant === "danger" ? COLORS.brick : COLORS.teal;
   return (
     <div
       style={{
@@ -1447,7 +1454,7 @@ function ConfirmModal({ title, message, confirmLabel = "OK", onConfirm, onCancel
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <AlertCircle size={20} color={COLORS.brick} />
+          <AlertCircle size={20} color={accentColor} />
           <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, color: COLORS.ink }}>
             {title}
           </div>
@@ -1457,12 +1464,32 @@ function ConfirmModal({ title, message, confirmLabel = "OK", onConfirm, onCancel
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <TicketButton variant="ghost" onClick={onCancel} style={{ flex: 1 }}>キャンセル</TicketButton>
-          <TicketButton variant="danger" onClick={onConfirm} style={{ flex: 1, background: COLORS.brick, color: "#FBF9F4" }}>
+          <TicketButton
+            variant={confirmVariant}
+            onClick={onConfirm}
+            style={confirmVariant === "danger" ? { flex: 1, background: COLORS.brick, color: "#FBF9F4" } : { flex: 1 }}
+          >
             {confirmLabel}
           </TicketButton>
         </div>
       </div>
     </div>
+  );
+}
+
+// ログアウト確認モーダル(スタッフ・管理者共通)。誤タップでのログアウトを防ぐため、
+// ログアウトボタンを持つ全画面(座席一覧/マスタ設定/アルバイト管理/承認待ち/退職済み/
+// 読み込みタイムアウト画面)で共通して使う。
+function LogoutConfirmModal({ onCancel, onConfirm }) {
+  return (
+    <ConfirmModal
+      title="ログアウトしますか？"
+      message="もう一度ログインし直すまで、この端末ではアプリを利用できなくなります。"
+      confirmLabel="ログアウト"
+      confirmVariant="primary"
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
   );
 }
 
@@ -2462,6 +2489,7 @@ function UserGuidePanel() {
 function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onUpdateSeatName, onUpdateRates, onUpdateSeatToneThresholds, onUpdatePayroll, onImportData, onImportDataPeriod, onDeleteAllData, onUpdateSecurity, onResetSecurity, showToast, myEmployee, onLogout }) {
   const isNarrow = useMediaQuery("(max-width: 720px)");
   const [tab, setTab] = useState("products");
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
   const [editing, setEditing] = useState(null); // product being edited, or {} for new
   const [activeProductCat, setActiveProductCat] = useState(""); // "" = すべて
   const [editingEmployee, setEditingEmployee] = useState(null); // null | {} | employee
@@ -2903,7 +2931,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 {myEmployee.name}({myEmployee.role === "admin" ? "管理者" : "スタッフ"})
               </div>
               <button
-                onClick={onLogout}
+                onClick={() => setConfirmingLogout(true)}
                 style={{
                   padding: "5px 10px",
                   borderRadius: 14,
@@ -3545,6 +3573,10 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
           onConfirm={() => setPasswordResetResult(null)}
         />
       )}
+
+      {confirmingLogout && (
+        <LogoutConfirmModal onCancel={() => setConfirmingLogout(false)} onConfirm={onLogout} />
+      )}
     </div>
   );
 }
@@ -3937,6 +3969,7 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
 }
 
 function PendingApprovalScreen({ employee, onLogout }) {
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
       <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>承認待ちです</div>
@@ -3944,12 +3977,16 @@ function PendingApprovalScreen({ employee, onLogout }) {
         {employee?.name ? `${employee.name}さんのアカウントは、` : "アカウントは、"}
         管理者の承認をお待ちしています。承認されるまでこの画面が表示されます。
       </div>
-      <TicketButton variant="ghost" onClick={onLogout}>ログアウト</TicketButton>
+      <TicketButton variant="ghost" onClick={() => setConfirmingLogout(true)}>ログアウト</TicketButton>
+      {confirmingLogout && (
+        <LogoutConfirmModal onCancel={() => setConfirmingLogout(false)} onConfirm={onLogout} />
+      )}
     </div>
   );
 }
 
 function DeactivatedScreen({ employee, onLogout }) {
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
       <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>ログインできません</div>
@@ -3957,7 +3994,10 @@ function DeactivatedScreen({ employee, onLogout }) {
         {employee?.name ? `${employee.name}さんのアカウントは、` : "このアカウントは、"}
         退職済みとして無効化されています。心当たりが無い場合は管理者にお問い合わせください。
       </div>
-      <TicketButton variant="ghost" onClick={onLogout}>ログアウト</TicketButton>
+      <TicketButton variant="ghost" onClick={() => setConfirmingLogout(true)}>ログアウト</TicketButton>
+      {confirmingLogout && (
+        <LogoutConfirmModal onCancel={() => setConfirmingLogout(false)} onConfirm={onLogout} />
+      )}
     </div>
   );
 }
@@ -4037,6 +4077,7 @@ function App() {
   const [myEmployee, setMyEmployee] = useState(null); // ログイン中ユーザー自身のemployees行
   const [myEmployeeTimedOut, setMyEmployeeTimedOut] = useState(false); // 取得が長時間終わらない場合のフォールバック表示用
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [confirmingLogout, setConfirmingLogout] = useState(false); // 読み込みタイムアウト画面のログアウト確認用
   const dataRef = useRef(null);
   const pendingSignupNameRef = useRef(null); // 新規登録直後、まだemployees行が無い場合の表示名の一時保管
 
@@ -4532,7 +4573,10 @@ function App() {
             読み込みに時間がかかっています。通信状況をご確認のうえ、再読み込みしてください。
           </div>
           <TicketButton variant="primary" onClick={() => window.location.reload()}>再読み込み</TicketButton>
-          <TicketButton variant="ghost" onClick={handleLogout}>ログアウト</TicketButton>
+          <TicketButton variant="ghost" onClick={() => setConfirmingLogout(true)}>ログアウト</TicketButton>
+          {confirmingLogout && (
+            <LogoutConfirmModal onCancel={() => setConfirmingLogout(false)} onConfirm={handleLogout} />
+          )}
         </div>
       );
     }

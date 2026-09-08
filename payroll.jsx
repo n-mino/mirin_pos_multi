@@ -1320,6 +1320,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
   const visibleTabs = isAdmin ? PAYROLL_TABS : PAYROLL_TABS.filter((t) => t.id !== "agg");
   const [tab, setTab] = useState(PAYROLL_TABS[0].id);
   const [editingShiftId, setEditingShiftId] = useState(null);
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
 
   const employees = payroll.employees;
   const shifts = payroll.shifts;
@@ -1401,7 +1402,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
                 </span>
               )}
               <button
-                onClick={onLogout}
+                onClick={() => setConfirmingLogout(true)}
                 style={{
                   padding: "6px 12px",
                   borderRadius: 14,
@@ -1458,6 +1459,10 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
         )}
         {tab === "agg" && isAdmin && <AggregationPanel employees={employees} shifts={shifts} rankBonusRates={rankBonusRates} />}
       </div>
+
+      {confirmingLogout && (
+        <LogoutConfirmModal onCancel={() => setConfirmingLogout(false)} onConfirm={onLogout} />
+      )}
     </div>
   );
 }
