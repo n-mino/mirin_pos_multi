@@ -817,7 +817,8 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
   const shiftTableCols = isAdmin ? SHIFT_TABLE_COLS : SHIFT_TABLE_COLS.split(" ").slice(1).join(" ");
   const [viewMode, setViewMode] = useState(lockedEmployeeId ? "individual" : "all"); // individual | all
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(lockedEmployeeId || employees[0]?.id || "");
-  const [dateMode, setDateMode] = useState("today"); // today | all | date
+  // スタッフ側は「本日のみ」ボタン自体を表示しないため、既定値を「すべて」にする(管理者は従来通り「本日のみ」)。
+  const [dateMode, setDateMode] = useState(isAdmin ? "today" : "all"); // today | all | date
   const [dateValue, setDateValue] = useState(toDateInputValue(new Date().toISOString()));
   const [deletingShiftId, setDeletingShiftId] = useState(null);
 
@@ -878,7 +879,9 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
           </div>
         )}
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => setDateMode("today")} style={payrollPillStyle(dateMode === "today")}>本日のみ</button>
+          {isAdmin && (
+            <button onClick={() => setDateMode("today")} style={payrollPillStyle(dateMode === "today")}>本日のみ</button>
+          )}
           <button onClick={() => setDateMode("all")} style={payrollPillStyle(dateMode === "all")}>すべて</button>
         </div>
         <div
