@@ -751,13 +751,14 @@ function SalesBackBreakdownCard({ salesHistory, employees, dateMode, dateValue, 
 }
 
 // スタッフ側の勤怠一覧で、自分の「勤務中」(終了時刻未入力)の行にだけ出す、
-// 終了時刻だけを入力する専用の狭いコントロール。汎用の編集フォーム
-// (ShiftEntryPanel、開始時刻・ランク・メモ等も変更できてしまう)は開放しない。
+// 終了時刻・メモだけを入力する専用の狭いコントロール。汎用の編集フォーム
+// (ShiftEntryPanel、開始時刻・ランク等も変更できてしまう)は開放しない。
 // 開始・終了時刻とも入力済みになった行はこのコントロール自体が出なくなり、
 // 以降の修正は管理者側の編集画面で行う運用。
 function StaffCloseShiftControl({ shift, onSave }) {
   const [editing, setEditing] = useState(false);
   const [endTime, setEndTime] = useState("");
+  const [note, setNote] = useState("");
   const [error, setError] = useState("");
 
   const handleSave = () => {
@@ -769,7 +770,7 @@ function StaffCloseShiftControl({ shift, onSave }) {
       setError("開始時刻と同じです。正しい時刻を選択してください。");
       return;
     }
-    const result = onSave(shift.id, endTime) || {};
+    const result = onSave(shift.id, endTime, note.trim()) || {};
     if (result.error) {
       setError(result.error);
       return;
@@ -784,7 +785,7 @@ function StaffCloseShiftControl({ shift, onSave }) {
   return (
     <>
       <button
-        onClick={() => { setEditing(true); setEndTime(""); setError(""); }}
+        onClick={() => { setEditing(true); setEndTime(""); setNote(shift.note || ""); setError(""); }}
         style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, textDecoration: "underline", background: "transparent", border: "none", cursor: "pointer", padding: 0, marginLeft: 6 }}
       >
         退勤時刻を入力
@@ -799,6 +800,13 @@ function StaffCloseShiftControl({ shift, onSave }) {
               {shift.date} {shift.startTime}〜
             </div>
             <TimeStepSelect value={endTime} onChange={setEndTime} />
+            <label style={{ fontSize: 12, color: COLORS.inkSoft, display: "block", marginTop: 14 }}>メモ(任意)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              style={{ ...payrollFieldInputStyle, marginTop: 4 }}
+            />
             {error && <div style={{ color: COLORS.brick, fontSize: 12, marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
               <TicketButton variant="ghost" onClick={() => setEditing(false)} style={{ flex: 1 }}>キャンセル</TicketButton>
@@ -1376,9 +1384,9 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
     showToast(nowPaid ? "支払い済みにしました" : "支払い未定に戻しました");
   };
 
-  // スタッフが自分の「勤務中」の勤怠に終了時刻だけを入力する専用の狭い更新処理。
-  // 汎用の編集(開始時刻・ランク・メモ等)は含めない(管理者専用のまま)。
-  const staffCloseShift = (id, endTime) => {
+  // スタッフが自分の「勤務中」の勤怠に終了時刻・メモを入力する専用の狭い更新処理。
+  // 汎用の編集(開始時刻・ランク等)は含めない(管理者専用のまま)。
+  const staffCloseShift = (id, endTime, note) => {
     const shift = shifts.find((s) => s.id === id);
     if (!shift) return { error: "対象の勤怠が見つかりません。" };
     const newRange = payrollShiftRange(shift.startTime, endTime);
@@ -1388,7 +1396,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
       return payrollShiftRangesOverlap(newRange, payrollShiftRange(s.startTime, s.endTime));
     });
     if (hasOverlap) return { error: "同じ日に時間帯が重複する勤怠データがすでに存在します。" };
-    onUpdatePayroll({ shifts: shifts.map((s) => (s.id === id ? { ...s, endTime } : s)) });
+    onUpdatePayroll({ shifts: shifts.map((s) => (s.id === id ? { ...s, endTime, note: note ?? s.note } : s)) });
     showToast("退勤時刻を保存しました");
     return {};
   };
