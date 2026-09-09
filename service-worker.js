@@ -1,5 +1,5 @@
 // このバージョン番号を上げると、次回オンライン時に新しいキャッシュへ切り替わる
-const CACHE_VERSION = "pos-app-cache-v120";
+const CACHE_VERSION = "pos-app-cache-v121";
 
 // アプリの動作に必要な全ファイル(App Shell)
 // CDNのReact/Babelも含めてキャッシュし、完全オフラインで起動できるようにする
@@ -10,6 +10,7 @@ const APP_SHELL = [
   "./ledger.jsx",
   "./payroll.jsx",
   "./manifest.json",
+  "./guide.html",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-192-maskable.png",

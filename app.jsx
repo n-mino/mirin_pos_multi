@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/09 15:26";
+const APP_LAST_UPDATED = "2026/09/09 17:17";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -3977,6 +3977,15 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
           <TicketButton variant="primary" onClick={handleSubmit} disabled={!canSubmit || busy} style={{ width: "100%", marginTop: 4 }}>
             {busy ? "処理中…" : mode === "login" ? "ログイン" : "登録する"}
           </TicketButton>
+
+          <a
+            href="./guide.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "block", textAlign: "center", marginTop: 28, fontSize: 12.5, color: COLORS.inkSoft, textDecoration: "underline" }}
+          >
+            使い方ガイドを見る
+          </a>
         </div>
       </div>
     </div>

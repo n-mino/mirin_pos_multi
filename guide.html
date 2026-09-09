@@ -1,0 +1,667 @@
+<title>MiRinスタッフガイド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<style>
+:root{
+  --bg:#EFEBE2;
+  --surface:#FBF9F4;
+  --surface-raised:#FFFFFF;
+  --ink:#1E2A22;
+  --ink-soft:#5B6459;
+  --ink-faint:#8B9186;
+  --teal:#1D4E4B;
+  --teal-dark:#123634;
+  --teal-tint:#E1EEEC;
+  --amber:#B4770F;
+  --amber-bg:#F7ECD8;
+  --brick:#A6402A;
+  --brick-bg:#F6E1DB;
+  --sage:#3F6B4C;
+  --sage-bg:#E4EEE3;
+  --slate:#3D5A73;
+  --slate-bg:#DCE6ED;
+  --line:#DCD4C4;
+  --line-strong:#C7BCA4;
+  --shadow:0 1px 2px rgba(30,42,34,.06),0 8px 24px rgba(30,42,34,.08);
+  --brand-teal:#1D4E4B;
+  --brand-teal-tint:#CFE4E1;
+  --on-brand-teal:#FBF9F4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10160F;
+    --surface:#1A231C;
+    --surface-raised:#212C22;
+    --ink:#ECE8DC;
+    --ink-soft:#A9AF9F;
+    --ink-faint:#767E6E;
+    --teal:#6FBBAE;
+    --teal-dark:#5FB3A4;
+    --teal-tint:#1D332F;
+    --amber:#E0AE5A;
+    --amber-bg:#332A16;
+    --brick:#E08D74;
+    --brick-bg:#392019;
+    --sage:#8FC09B;
+    --sage-bg:#1E2E20;
+    --slate:#9DC1E0;
+    --slate-bg:#1E2A33;
+    --line:#33402F;
+    --line-strong:#465243;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 28px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10160F;
+  --surface:#1A231C;
+  --surface-raised:#212C22;
+  --ink:#ECE8DC;
+  --ink-soft:#A9AF9F;
+  --ink-faint:#767E6E;
+  --teal:#6FBBAE;
+  --teal-dark:#5FB3A4;
+  --teal-tint:#1D332F;
+  --amber:#E0AE5A;
+  --amber-bg:#332A16;
+  --brick:#E08D74;
+  --brick-bg:#392019;
+  --sage:#8FC09B;
+  --sage-bg:#1E2E20;
+  --slate:#9DC1E0;
+  --slate-bg:#1E2A33;
+  --line:#33402F;
+  --line-strong:#465243;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 28px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box;}
+body{background:var(--bg);}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+
+.deck{
+  font-family:'IBM Plex Sans JP','Hiragino Sans',sans-serif;
+  color:var(--ink);
+  background:var(--bg);
+  min-height:600px;
+  padding-bottom:64px;
+  position:relative;
+}
+
+.slide{
+  display:none;
+  min-height:min(640px,86vh);
+  padding:44px clamp(20px,5vw,64px) 28px;
+  animation:fadein .35s ease;
+}
+.slide.active{display:flex;flex-direction:column;}
+@media (prefers-reduced-motion: reduce){ .slide{animation:none;} }
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.slide-inner{max-width:900px;margin:0 auto;width:100%;flex:1;display:flex;flex-direction:column;}
+
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.08em;
+  color:var(--teal);
+  text-transform:uppercase;
+  margin:0 0 10px;
+}
+h1.title{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:clamp(26px,3.4vw,38px);
+  line-height:1.25;
+  margin:0 0 6px;
+  color:var(--ink);
+  text-wrap:balance;
+}
+.sub{
+  font-size:14.5px;
+  color:var(--ink-soft);
+  margin:0 0 28px;
+  line-height:1.7;
+  max-width:62ch;
+}
+
+.step-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;counter-reset:step;}
+.step{
+  display:grid;
+  grid-template-columns:40px 1fr;
+  gap:16px;
+  align-items:start;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px 18px;
+  box-shadow:var(--shadow);
+}
+.step-num{
+  counter-increment:step;
+  font-family:'IBM Plex Mono',monospace;
+  font-weight:600;
+  font-size:15px;
+  color:var(--teal-dark);
+  background:var(--teal-tint);
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.step-num::before{content:counter(step);}
+.step-body h3{margin:0 0 4px;font-size:15px;font-weight:700;color:var(--ink);}
+.step-body p{margin:0;font-size:13.5px;line-height:1.75;color:var(--ink-soft);}
+.step-body p + p{margin-top:6px;}
+.tag{
+  display:inline-flex;align-items:center;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:600;
+  padding:2px 8px;border-radius:5px;
+  margin-right:6px;
+  background:var(--teal-tint);color:var(--teal-dark);
+}
+.tag.warn{background:var(--brick-bg);color:var(--brick);}
+.tag.ok{background:var(--sage-bg);color:var(--sage);}
+.tag.note{background:var(--amber-bg);color:var(--amber);}
+
+.two-col{display:grid;grid-template-columns:1.15fr 1fr;gap:32px;flex:1;align-items:start;}
+@media (max-width:720px){.two-col{grid-template-columns:1fr;}}
+
+.note-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px 18px;
+  box-shadow:var(--shadow);
+  font-size:13.5px;
+  line-height:1.75;
+  color:var(--ink-soft);
+}
+.note-card strong{color:var(--ink);font-weight:700;}
+.note-card.warn{border-color:color-mix(in srgb, var(--brick) 40%, var(--line));background:var(--brick-bg);color:var(--brick);}
+.note-card.warn strong{color:var(--brick);}
+.note-card.ok{border-color:color-mix(in srgb, var(--sage) 40%, var(--line));background:var(--sage-bg);color:var(--sage);}
+.note-card.ok strong{color:var(--sage);}
+
+/* --- mock UI fragments (illustrative, not screenshots) --- */
+.mock{
+  background:var(--surface-raised);
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:var(--shadow);
+  padding:18px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.mock-label{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+
+.seat-legend{display:flex;flex-direction:column;gap:10px;}
+.seat-row{display:flex;align-items:center;gap:12px;}
+.seat-chip{width:52px;height:38px;border-radius:8px 8px 14px 14px;flex-shrink:0;border:1.5px solid;}
+.seat-row .label{font-family:'IBM Plex Sans JP',sans-serif;font-size:12.5px;color:var(--ink);}
+.seat-row .time{font-size:11px;color:var(--ink-faint);}
+
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;
+  font-family:'IBM Plex Sans JP',sans-serif;
+}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.badge.occupied{background:var(--sage-bg);color:var(--sage);}
+.badge.waiting{background:var(--slate-bg);color:var(--slate);}
+.badge.empty{background:var(--line);color:var(--ink-soft);}
+
+.order-mock{display:flex;flex-direction:column;gap:8px;}
+.order-cat{display:flex;gap:6px;margin-bottom:8px;}
+.pill{font-family:'IBM Plex Sans JP',sans-serif;font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:16px;border:1.5px solid var(--line);color:var(--ink-soft);}
+.pill.active{background:var(--teal);border-color:var(--teal-dark);color:var(--surface-raised);}
+.order-item{display:flex;justify-content:space-between;align-items:center;font-family:'IBM Plex Sans JP',sans-serif;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--line);}
+.order-item .qty{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);}
+.dot-btn{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-strong);display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-soft);}
+
+.checkbox-row{display:flex;gap:18px;font-family:'IBM Plex Sans JP',sans-serif;font-size:13px;}
+.checkbox-row .cb{display:flex;align-items:center;gap:7px;}
+.checkbox-row .box{width:15px;height:15px;border:1.5px solid var(--line-strong);border-radius:3px;}
+.checkbox-row .box.on{background:var(--teal);border-color:var(--teal-dark);}
+
+.qr-card{
+  background:var(--surface-raised);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:22px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+.qr-card canvas{border-radius:8px;}
+.url-box{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;
+  background:var(--teal-tint);
+  color:var(--teal-dark);
+  padding:9px 14px;
+  border-radius:8px;
+  word-break:break-all;
+  text-align:center;
+}
+
+.cover{align-items:flex-start;justify-content:center;}
+.cover-mark{
+  width:68px;height:68px;border-radius:18px;
+  overflow:hidden;
+  margin-bottom:22px;
+  box-shadow:var(--shadow);
+}
+.cover-mark img{width:100%;height:100%;display:block;object-fit:cover;}
+.cover h1{
+  font-family:'Fraunces',serif;font-weight:600;
+  font-size:clamp(34px,6vw,58px);
+  line-height:1.15;margin:0 0 14px;color:var(--ink);text-wrap:balance;
+}
+.cover .sub{font-size:16px;max-width:46ch;}
+.cover-meta{
+  margin-top:auto;padding-top:36px;
+  display:flex;gap:28px;flex-wrap:wrap;
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);
+}
+.cover-meta b{color:var(--ink-soft);font-weight:600;}
+
+.section-slide{
+  align-items:flex-start;justify-content:center;
+  background:var(--brand-teal);
+}
+.section-slide .slide-inner{justify-content:center;}
+.section-slide .eyebrow{color:var(--brand-teal-tint);}
+.section-slide h1.title{color:var(--on-brand-teal);font-size:clamp(30px,4.5vw,46px);}
+.section-slide .sub{color:var(--brand-teal-tint);}
+.section-num{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--brand-teal-tint);
+  margin-bottom:2px;
+}
+
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media (max-width:600px){.contact-grid{grid-template-columns:1fr;}}
+
+/* nav */
+.deck-nav{
+  position:fixed;left:0;right:0;bottom:0;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;
+  padding:10px clamp(16px,4vw,40px);
+  background:color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter:blur(6px);
+  border-top:1px solid var(--line);
+  font-family:'IBM Plex Mono',monospace;
+}
+.nav-btn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface-raised);
+  border:1px solid var(--line-strong);
+  color:var(--ink);
+  font-family:'IBM Plex Sans JP',sans-serif;
+  font-weight:600;font-size:13px;
+  padding:8px 16px;border-radius:20px;
+  cursor:pointer;
+}
+.nav-btn:disabled{opacity:.35;cursor:default;}
+.nav-btn:not(:disabled):hover{border-color:var(--teal);color:var(--teal-dark);}
+.nav-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+.dots{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap;max-width:60%;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--line-strong);border:none;padding:0;cursor:pointer;}
+.dot.on{background:var(--teal);width:18px;border-radius:4px;}
+.counter{color:var(--ink-faint);font-size:12px;min-width:52px;text-align:right;}
+</style>
+
+<div class="deck" id="deck">
+  <h2 class="sr-only">MiRin POSのスタッフ向け操作ガイド。アプリのURL・QRコード、新規登録、ログイン、パスワード変更、ログアウト、座席一覧の見方、注文の仕方、会計の仕方、勤怠入力、勤怠一覧、退勤時刻の入力について、スライド形式で解説する。</h2>
+
+  <section class="slide active cover">
+    <div class="slide-inner">
+      <div class="cover-mark" aria-hidden="true">
+        <img src="data:image/png;base64,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" alt="">
+      </div>
+      <div class="eyebrow">Staff Operation Guide</div>
+      <h1>MiRin POS<br>スタッフガイド</h1>
+      <p class="sub">座席・注文・会計・勤怠入力まで、スマホでの操作をひとつずつ確認できます。わからなくなったら、この続きから読み直してください。</p>
+      <div class="cover-meta">
+        <div><b>対象</b> スタッフ用スマートフォン</div>
+        <div><b>収録</b> 登録〜ログイン / 座席・注文・会計 / 勤怠入力</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Access</div>
+      <h1 class="title">アプリを開く</h1>
+      <p class="sub">下のQRコードを読み取るか、URLをブラウザに入力してアプリを開きます。一度開いたら、ホーム画面に追加しておくと次回から早く開けます。</p>
+      <div class="two-col">
+        <div class="qr-card">
+          <canvas id="qr-canvas" width="200" height="200" role="img" aria-label="MiRin POSのアプリを開くQRコード"></canvas>
+          <div class="url-box">/mirin_pos_multi</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="note-card"><strong>ホーム画面への追加(Android・Chrome)</strong><br>右上の「⋮」もしくは四角に↑のアイコンを開き、「ホーム画面に追加」(または「アプリをインストール」)を選びます。</div>
+          <div class="note-card"><strong>ホーム画面への追加(iPhone・Safari)</strong><br>画面下部の共有アイコン(四角に↑)もしくは(・・・)をタップし、「ホーム画面に追加」を選びます。</div>
+          <div class="note-card ok"><strong>追加時は「Webアプリとして開く」をON</strong><br>ONにすると、ブラウザのアドレスバーが無い、アプリのような画面で開けます。このアプリはON前提で作られているため、必ずONにしてください。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="section-num">Part 1</div>
+      <div class="eyebrow">Account</div>
+      <h1 class="title">はじめてのログイン</h1>
+      <p class="sub">新規登録 → 承認待ち → ログイン、という3つの段階があります。最初だけ少し時間がかかります。</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Step 1</div>
+      <h1 class="title">新規登録する</h1>
+      <p class="sub">はじめて使う人だけ、最初に1回行います。2回目以降は不要です。</p>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>ログイン画面で「新規登録」タブを選ぶ</h3><p>「ログイン」の隣にあるタブです。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>3つの項目を入力する</h3><p><span class="tag">ユーザー名(ログイン用)</span>好きな英数字。次回以降のログインに使います。<br><span class="tag">お名前(表示名)</span>座席・勤怠に表示される名前。<br><span class="tag">パスワード</span>6文字以上。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>登録する</h3><p>「登録リクエストを送信しました」と表示されれば完了です。この時点ではまだアプリは使えません。</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Step 2</div>
+      <h1 class="title">承認を待つ</h1>
+      <p class="sub">登録した内容を管理者が確認し、承認してからアプリを使えるようになります。</p>
+      <div class="two-col">
+        <div class="note-card">
+          <strong>「承認待ちです」画面について</strong><br>
+          登録直後にログインすると、この画面が表示されます。管理者の承認が終わるまで、座席一覧などは開けません。
+        </div>
+        <div class="note-card ok">
+          <strong>待っている間はログオフしてOK</strong><br>
+          この画面を開いたままにしておく必要はありません。一度ログアウトして、後で改めてログインし直せば、承認済みになっていればそのまま使えます。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Step 3</div>
+      <h1 class="title">ログインする</h1>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>「ログイン」タブでユーザー名とパスワードを入力</h3><p>新規登録で決めたものと同じです。忘れないようにメモしておいてください。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>承認済みなら、そのまま座席一覧が開きます</h3><p>まだ承認されていない場合は「承認待ちです」画面が表示されます。</p></div></li>
+      </ol>
+      <div class="note-card warn" style="margin-top:16px;"><strong>パスワードを忘れたら</strong> 自分では再発行できません。管理者に伝えて、仮パスワードを発行してもらってください。</div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Account</div>
+      <h1 class="title">パスワードを変更する</h1>
+      <p class="sub">仮パスワードを管理者からもらった後や、忘れにくいものに変えたいときに使います。</p>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>画面上部の自分の名前をタップする</h3><p>座席一覧・勤怠管理、どちらの画面のヘッダーからでも開けます。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>新しいパスワードを2回入力する</h3><p>6文字以上。確認用と合わせて同じものを入力してください。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>「変更する」を押す</h3><p>次回のログインから新しいパスワードが使えます。</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Account</div>
+      <h1 class="title">ログアウトする</h1>
+      <p class="sub">共有の端末で使う場合など、使い終わったらログアウトしておきましょう。</p>
+      <div class="two-col">
+        <div class="step-list" style="gap:14px;">
+          <div class="step"><div class="step-num"></div><div class="step-body"><h3>「ログアウト」ボタンを押す</h3><p>座席一覧・勤怠管理、各画面の右上にあります。</p></div></div>
+          <div class="step"><div class="step-num"></div><div class="step-body"><h3>確認画面で「ログアウト」を押す</h3><p>間違えて押した場合は「キャンセル」で戻れます。</p></div></div>
+        </div>
+        <div class="note-card"><strong>誤タップ防止</strong><br>ボタンを押しただけではログアウトされません。必ず確認画面が挟まるので、安心して操作してください。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="section-num">Part 2</div>
+      <div class="eyebrow">Front of house</div>
+      <h1 class="title">座席・注文・会計</h1>
+      <p class="sub">お客様が来店してから会計を依頼するまでの流れです。</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Seats</div>
+      <h1 class="title">座席一覧の見方</h1>
+      <p class="sub">座席カードの色と表示で、今の状態がひと目でわかります。</p>
+      <div class="two-col">
+        <div class="mock">
+          <div class="mock-label">座席カードの色分け</div>
+          <div class="seat-legend">
+            <div class="seat-row"><div class="seat-chip" style="background:var(--sage-bg);border-color:var(--sage);"></div><div><div class="label">使用中</div><div class="time">経過時間が短い</div></div></div>
+            <div class="seat-row"><div class="seat-chip" style="background:var(--amber-bg);border-color:var(--amber);"></div><div><div class="label">使用中</div><div class="time">そろそろ確認</div></div></div>
+            <div class="seat-row"><div class="seat-chip" style="background:var(--brick-bg);border-color:var(--brick);"></div><div><div class="label">使用中</div><div class="time">長時間滞在</div></div></div>
+            <div class="seat-row"><div class="seat-chip" style="background:var(--slate-bg);border-color:var(--slate);"></div><div><div class="label">会計待ち</div><div class="time">会計を依頼済み、管理者の確定待ち</div></div></div>
+            <div class="seat-row"><div class="seat-chip" style="background:var(--surface);border-color:var(--line);"></div><div><div class="label">空席</div><div class="time">タップして開始</div></div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="note-card">座席カードには<strong>人数・経過時間・現在の合計金額</strong>も表示されます。</div>
+          <div class="note-card"><strong>会計待ちの座席</strong>には注文を追加できません。依頼を間違えた場合は取り消せます(詳しくは「会計のしかた」で説明します)。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Order — 1/2</div>
+      <h1 class="title">人数を入力する</h1>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>空席のカードをタップする</h3><p>人数入力の画面が開きます。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>人数を選ぶ</h3><p>よく使う人数はボタン一つで選べます。1名ずつ<span class="tag">−</span><span class="tag">＋</span>で調整も可能です。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>該当すれば「呼込み」「同伴」にチェック</h3><p>どちらか一方のみ選べます。担当スタッフを選ぶ欄が出てくるので選択してください(初期状態は自分が選ばれています)。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>「開始する」を押す</h3></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Order — 2/2</div>
+      <h1 class="title">商品を注文する</h1>
+      <div class="two-col">
+        <div class="mock order-mock">
+          <div class="mock-label">注文画面(イメージ)</div>
+          <div class="order-cat"><span class="pill active">ドリンク</span><span class="pill">フード</span><span class="pill">デザート</span></div>
+          <div class="order-item"><span>ハイボール</span><span class="qty"><span class="dot-btn">−</span>2<span class="dot-btn">＋</span></span></div>
+          <div class="order-item"><span>唐揚げ</span><span class="qty"><span class="dot-btn">−</span>1<span class="dot-btn">＋</span></span></div>
+        </div>
+        <ol class="step-list" style="gap:12px;">
+          <li class="step"><div class="step-num"></div><div class="step-body"><h3>カテゴリを選んで商品をタップ</h3><p>タップするたびに注文リストに1個ずつ追加されます。</p></div></li>
+          <li class="step"><div class="step-num"></div><div class="step-body"><h3>数量は右側の <span class="tag">−</span><span class="tag">＋</span> で調整</h3></div></li>
+          <li class="step"><div class="step-num"></div><div class="step-body"><h3>注文の追加・変更はいつでも可能</h3><p>会計へ進むまでは何度でも追加・修正できます。</p></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Checkout</div>
+      <h1 class="title">会計のしかた</h1>
+      <p class="sub">スタッフは金額を確認して「会計を依頼する」ところまで。最終確定は管理者が行います。</p>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>「会計へ進む」を押す</h3><p>小計・サービス料・消費税・合計金額が表示されます。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>金額を確認して「会計を依頼する」を押す</h3><p>座席カードが <span class="badge waiting">会計待ち</span> に変わり、管理者に会計確定を依頼した状態になります。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>依頼を間違えたときは「会計依頼を取り消す」</h3><p>会計待ち中の画面から取り消せます。注文の編集に戻れます。</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Cancel</div>
+      <h1 class="title">注文を取り消すには</h1>
+      <p class="sub">会計とは別の操作です。お客様がキャンセルになった場合など、座席を空席の状態に戻します。</p>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>注文画面の「取り消し」ボタンを押す</h3><p>「会計へ進む」ボタンの隣にあります。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>確認画面で内容を確認し、「取り消す」を押す</h3></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>その座席の注文がすべて消え、空席に戻ります</h3></div></li>
+      </ol>
+      <div class="note-card warn" style="margin-top:16px;"><strong>この操作は元に戻せません。</strong> 人数の入力からやり直しになるので、押し間違いに注意してください。</div>
+    </div>
+  </section>
+
+  <section class="slide section-slide">
+    <div class="slide-inner">
+      <div class="section-num">Part 3</div>
+      <div class="eyebrow">Time tracking</div>
+      <h1 class="title">勤怠管理</h1>
+      <p class="sub">出勤・退勤の記録は「勤怠管理」タブから、自分の分だけ入力・確認できます。</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Attendance — 1/3</div>
+      <h1 class="title">勤怠を入力する</h1>
+      <p class="sub">「勤怠管理」→「勤怠入力」タブから記録します。</p>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>日付と開始時刻を選ぶ(15分単位)</h3></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>終了時刻を選ぶ、わからなければ空欄のままでOK</h3><p>空欄で保存すると「勤務中」として記録され、退勤時刻は後から入力できます。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>該当すれば「呼込み」「同伴」「その他」のランクを選ぶ</h3><p>同じ日・同じ時間帯にすでに記録がある場合はエラーになります。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>「追加する」を押す</h3></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Attendance — 2/3</div>
+      <h1 class="title">勤怠一覧の見方</h1>
+      <p class="sub">「勤怠一覧」タブでは、自分の勤怠記録だけが表示されます。</p>
+      <div class="two-col">
+        <div class="note-card">
+          <strong>絞り込み</strong><br>
+          「すべて」または日付を指定して表示できます(既定は「すべて」)。
+        </div>
+        <div class="note-card">
+          <strong>「勤務中」の表示</strong><br>
+          終了時刻が未入力の記録は、時間欄がオレンジ色で「勤務中」と表示され、勤務時間・合計金額の集計からは除外されます。
+        </div>
+      </div>
+      <div class="note-card warn" style="margin-top:16px;"><strong>入力ミスの修正・削除は自分ではできません。</strong> 管理者に伝えて修正してもらってください(退勤時刻の入力のみ、自分で行えます。次のページ参照)。</div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Attendance — 3/3</div>
+      <h1 class="title">退勤時刻の入力について</h1>
+      <p class="sub">終了時刻を空欄のまま保存した「勤務中」の記録は、後から自分で退勤時刻を入力できます。</p>
+      <ol class="step-list">
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>勤怠一覧で自分の「勤務中」の行を探す</h3><p>時間欄にオレンジ色で「勤務中」と表示されている行です。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>「退勤時刻を入力」を押す</h3><p>ポップアップが開きます。</p></div></li>
+        <li class="step"><div class="step-num"></div><div class="step-body"><h3>退勤時刻(15分単位)とメモ(任意)を入力して保存</h3><p>開始時刻と同じ時刻は選べません。</p></div></li>
+      </ol>
+      <div class="note-card" style="margin-top:16px;"><strong>一度入力すると</strong> この操作はできなくなります。修正が必要な場合は管理者に依頼してください。</div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Support</div>
+      <h1 class="title">困ったときは</h1>
+      <p class="sub">下記のような場合は、自分では解決できないので管理者に相談してください。</p>
+      <div class="contact-grid">
+        <div class="note-card warn"><strong>パスワードを忘れた</strong><br>管理者に仮パスワードを発行してもらってください。</div>
+        <div class="note-card warn"><strong>アカウントがまだ承認されない</strong><br>登録名(表示名)を伝えて確認を依頼してください。</div>
+        <div class="note-card warn"><strong>勤怠の入力ミスを直したい</strong><br>退勤時刻以外の修正・削除は管理者のみ行えます。</div>
+        <div class="note-card warn"><strong>その他、操作でわからないこと</strong><br>このガイドの該当ページを一緒に確認してもらいましょう。</div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="deck-nav" aria-label="スライド操作">
+    <button class="nav-btn" id="prevBtn" aria-label="前のスライド">← 前へ</button>
+    <div class="dots" id="dots" role="tablist" aria-label="スライド一覧"></div>
+    <span class="counter" id="counter">1 / 1</span>
+    <button class="nav-btn" id="nextBtn" aria-label="次のスライド">次へ →</button>
+  </nav>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var dotsEl = document.getElementById('dots');
+  var counterEl = document.getElementById('counter');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var current = 0;
+
+  slides.forEach(function(_, i){
+    var d = document.createElement('button');
+    d.className = 'dot' + (i === 0 ? ' on' : '');
+    d.setAttribute('aria-label', 'スライド ' + (i+1));
+    d.addEventListener('click', function(){ go(i); });
+    dotsEl.appendChild(d);
+  });
+  var dots = Array.prototype.slice.call(dotsEl.children);
+
+  function go(i){
+    if(i < 0 || i >= slides.length) return;
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('on');
+    current = i;
+    slides[current].classList.add('active');
+    dots[current].classList.add('on');
+    counterEl.textContent = (current+1) + ' / ' + slides.length;
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === slides.length - 1;
+    document.getElementById('deck').scrollIntoView({block:'start', behavior:'instant'});
+  }
+
+  prevBtn.addEventListener('click', function(){ go(current - 1); });
+  nextBtn.addEventListener('click', function(){ go(current + 1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight') go(current + 1);
+    if(e.key === 'ArrowLeft') go(current - 1);
+  });
+
+  var touchStartX = null;
+  document.addEventListener('touchstart', function(e){ touchStartX = e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if(touchStartX === null) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) > 60){ dx < 0 ? go(current + 1) : go(current - 1); }
+    touchStartX = null;
+  }, {passive:true});
+
+  counterEl.textContent = '1 / ' + slides.length;
+  prevBtn.disabled = true;
+
+  try{
+    new QRious({
+      element: document.getElementById('qr-canvas'),
+      value: 'https://n-mino.github.io/mirin_pos_multi/',
+      size: 200,
+      background: '#FFFFFF',
+      foreground: '#1E2A22',
+      level: 'M'
+    });
+  }catch(e){}
+})();
+</script>
