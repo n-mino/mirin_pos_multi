@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>MiRinスタッフガイド</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -285,6 +288,20 @@ h1.title{
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 @media (max-width:600px){.contact-grid{grid-template-columns:1fr;}}
 
+.back-link{
+  position:fixed;top:12px;left:12px;z-index:200;
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:'IBM Plex Sans JP',sans-serif;
+  font-size:12px;font-weight:600;
+  color:var(--ink-soft);
+  background:color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  border:1px solid var(--line);
+  padding:6px 12px;border-radius:20px;
+  text-decoration:none;
+  box-shadow:var(--shadow);
+}
+.back-link:hover{border-color:var(--teal);color:var(--teal-dark);}
+
 /* nav */
 .deck-nav{
   position:fixed;left:0;right:0;bottom:0;
@@ -317,6 +334,7 @@ h1.title{
 
 <div class="deck" id="deck">
   <h2 class="sr-only">MiRin POSのスタッフ向け操作ガイド。アプリのURL・QRコード、新規登録、ログイン、パスワード変更、ログアウト、座席一覧の見方、注文の仕方、会計の仕方、勤怠入力、勤怠一覧、退勤時刻の入力について、スライド形式で解説する。</h2>
+  <a class="back-link" href="./index.html">← アプリに戻る</a>
 
   <section class="slide active cover">
     <div class="slide-inner">
