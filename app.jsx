@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/24 18:09";
+const APP_LAST_UPDATED = "2026/09/24 18:57";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -1267,7 +1267,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 13, color: COLORS.inkSoft }}>空席・タップして開始</div>
+                  <div style={{ fontSize: 13, color: COLORS.inkSoft }}>空席</div>
                 )}
               </button>
             );
@@ -1617,10 +1617,11 @@ function SecurityResetModal({ onCancel, onConfirm }) {
 /* ---------------------------------------------------------
    注文画面
 --------------------------------------------------------- */
-function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, onBack, onGoCheckout, onCancelSeat }) {
+function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, onBack, onGoCheckout, onCancelSeat, employees, currentEmployeeName, onUpdateCompanion }) {
   const categories = Array.from(new Set(products.map((p) => p.category)));
   const [activeCat, setActiveCat] = useState(categories[0] || "");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showCompanionEdit, setShowCompanionEdit] = useState(false);
   const isNarrow = useMediaQuery("(max-width: 720px)");
 
   const addProduct = (p) => {
@@ -1646,7 +1647,16 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header
-        title={companionLabel(seat.companion) ? `${seatDisplayLabel(seatNum, seatName)}　　${companionKindLabel(companionEffectiveKind(seat.companion, seat.companionKind))}：${companionLabel(seat.companion)}` : seatDisplayLabel(seatNum, seatName)}
+        title={
+          <span
+            onClick={() => setShowCompanionEdit(true)}
+            title="タップして呼込み・同伴を設定"
+            style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {companionLabel(seat.companion) ? `${seatDisplayLabel(seatNum, seatName)}　　${companionKindLabel(companionEffectiveKind(seat.companion, seat.companionKind))}：${companionLabel(seat.companion)}` : seatDisplayLabel(seatNum, seatName)}
+            <Pencil size={13} style={{ opacity: 0.65, flexShrink: 0 }} />
+          </span>
+        }
         onBack={onBack}
         right={
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: MONO, fontSize: 14 }}>
@@ -1809,6 +1819,124 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
           }}
         />
       )}
+
+      {showCompanionEdit && (
+        <CompanionEditModal
+          seatNum={seatNum}
+          seat={seat}
+          employees={employees}
+          currentEmployeeName={currentEmployeeName}
+          onCancel={() => setShowCompanionEdit(false)}
+          onConfirm={(companionKind, companionName) => {
+            setShowCompanionEdit(false);
+            onUpdateCompanion(companionKind, companionName);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   呼込み・同伴の設定(使用中の座席から後付けで設定・変更・解除)
+--------------------------------------------------------- */
+function CompanionEditModal({ seatNum, seat, employees, currentEmployeeName, onConfirm, onCancel }) {
+  const [companionKind, setCompanionKind] = useState(companionEffectiveKind(seat.companion, seat.companionKind));
+  const [companionName, setCompanionName] = useState(companionLabel(seat.companion));
+
+  useEffect(() => {
+    if (!companionKind) {
+      setCompanionName("");
+    } else if (!companionName && employees.length > 0) {
+      const defaultName = employees.some((e) => e.name === currentEmployeeName) ? currentEmployeeName : employees[0].name;
+      setCompanionName(defaultName);
+    }
+  }, [companionKind, employees]);
+
+  // 同伴/呼込みはどちらか一方のみ選択可能(同じ方をもう一度押すと解除、もう片方を押すと切り替え)
+  const toggleKind = (kind) => setCompanionKind((cur) => (cur === kind ? "" : kind));
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(20,24,20,0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+        padding: 20,
+        overflowY: "auto",
+      }}
+    >
+      <div
+        style={{
+          background: COLORS.paper,
+          borderRadius: 12,
+          padding: 26,
+          width: "100%",
+          maxWidth: 360,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+          margin: "20px 0",
+        }}
+      >
+        <div style={{ fontFamily: MONO, fontSize: 13, color: COLORS.inkSoft, marginBottom: 4 }}>
+          SEAT {seatNum}
+        </div>
+        <div style={{ fontFamily: DISPLAY, fontSize: 21, fontWeight: 700, color: COLORS.ink, marginBottom: 18 }}>
+          呼込み・同伴を設定
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24, marginBottom: companionKind ? 10 : 22 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <input type="checkbox" checked={companionKind === "call"} onChange={() => toggleKind("call")} style={{ width: 16, height: 16 }} />
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>呼込み</span>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <input type="checkbox" checked={companionKind === "companion"} onChange={() => toggleKind("companion")} style={{ width: 16, height: 16 }} />
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>同伴</span>
+          </label>
+        </div>
+
+        {companionKind && (
+          <div style={{ marginBottom: 16 }}>
+            {employees.length === 0 ? (
+              <div style={{ fontSize: 13, color: COLORS.inkSoft, textAlign: "center" }}>
+                先にマスタ設定の「従業員マスタ」でスタッフを登録してください。
+              </div>
+            ) : (
+              <select
+                value={companionName}
+                onChange={(e) => setCompanionName(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "9px 10px",
+                  borderRadius: 8,
+                  border: `1.5px solid ${COLORS.line}`,
+                  fontSize: 15,
+                  fontFamily: SANS,
+                  color: COLORS.ink,
+                  background: COLORS.paper,
+                }}
+              >
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.name}>{emp.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 22 }}>
+          「同伴」への切り替え・解除は、同伴料金(¥3,000)の注文明細も自動で追加・削除されます。
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <TicketButton variant="ghost" onClick={onCancel} style={{ flex: 1 }}>キャンセル</TicketButton>
+          <TicketButton variant="primary" onClick={() => onConfirm(companionKind, companionKind ? companionName : "")} style={{ flex: 1 }}>保存する</TicketButton>
+        </div>
+      </div>
     </div>
   );
 }
@@ -4721,6 +4849,29 @@ function App() {
     persist({ ...dataRef.current, seats: newSeats });
   };
 
+  // 使用中(occupied)の座席の呼込み/同伴を後から設定・変更・解除する。
+  // 「同伴」への切り替え時は同伴料金(¥3,000)の注文行を自動追加、「同伴」から外れる際は自動削除する
+  // (開始時の人数入力モーダル(handleConfirmGuests)と同じ¥3,000固定料金の扱いに揃えている)。
+  const handleUpdateCompanion = (companionKind, companionName) => {
+    const n = activeSeat;
+    const seat = dataRef.current.seats[n];
+    if (!seat) return;
+    const prevKind = companionEffectiveKind(seat.companion, seat.companionKind);
+    const newKind = companionName ? companionKind : "";
+    let newOrders = seat.orders;
+    if (newKind === "companion" && prevKind !== "companion") {
+      newOrders = [...seat.orders, { id: uid("ord"), productId: null, name: "同伴", price: 3000, qty: 1, isCompanionFee: true }];
+    } else if (prevKind === "companion" && newKind !== "companion") {
+      newOrders = seat.orders.filter((o) => !o.isCompanionFee);
+    }
+    const newSeats = {
+      ...dataRef.current.seats,
+      [n]: { ...seat, companion: companionName || "", companionKind: newKind, orders: newOrders },
+    };
+    persist({ ...dataRef.current, seats: newSeats });
+    showToast(newKind ? `座席${n} ${companionKindLabel(newKind)}：${companionName} を設定しました` : `座席${n} 呼込み・同伴の設定を解除しました`);
+  };
+
   const handleCancelSeat = (n) => {
     const newSeats = { ...dataRef.current.seats };
     delete newSeats[n];
@@ -4851,6 +5002,9 @@ function App() {
           onBack={() => { setScreen("top"); setActiveSeat(null); }}
           onGoCheckout={() => setScreen("checkout")}
           onCancelSeat={handleCancelSeat}
+          employees={(data.payroll?.employees || []).filter((e) => e.active !== false)}
+          currentEmployeeName={myEmployee?.name}
+          onUpdateCompanion={handleUpdateCompanion}
         />
       )}
 
