@@ -40,7 +40,7 @@ function salesTabPillStyle(active) {
     border: `1.5px solid ${active ? COLORS.teal : COLORS.line}`,
     background: active ? COLORS.teal : "transparent",
     color: active ? "#FBF9F4" : COLORS.inkSoft,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 700,
     whiteSpace: "nowrap",
     flexShrink: 0,
@@ -61,7 +61,7 @@ function CashFlowColumn({ title, rows, onChange }) {
 
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, color: COLORS.ink, textAlign: "center", marginBottom: 14 }}>
+      <div style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 700, color: COLORS.ink, textAlign: "center", marginBottom: 14 }}>
         {title}
       </div>
 
@@ -69,7 +69,7 @@ function CashFlowColumn({ title, rows, onChange }) {
         項目追加
       </TicketButton>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12, color: COLORS.inkSoft, fontWeight: 700 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 13, color: COLORS.inkSoft, fontWeight: 700 }}>
         <div style={{ flex: 2 }}>摘要</div>
         <div style={{ flex: 1 }}>金額</div>
         <div style={{ width: 30, flexShrink: 0 }} />
@@ -88,7 +88,7 @@ function CashFlowColumn({ title, rows, onChange }) {
                 padding: "9px 10px",
                 borderRadius: 6,
                 border: `1.5px solid ${COLORS.line}`,
-                fontSize: 14,
+                fontSize: 15,
                 background: COLORS.paper,
                 color: COLORS.ink,
               }}
@@ -106,7 +106,7 @@ function CashFlowColumn({ title, rows, onChange }) {
                 borderRadius: 6,
                 border: `1.5px solid ${COLORS.line}`,
                 fontFamily: MONO,
-                fontSize: 14,
+                fontSize: 15,
                 background: COLORS.paper,
                 color: COLORS.ink,
               }}
@@ -134,8 +134,8 @@ function CashFlowColumn({ title, rows, onChange }) {
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: `1px solid ${COLORS.line}`, paddingTop: 10 }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>合計</span>
-        <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>合計</span>
+        <span style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
       </div>
     </div>
   );
@@ -168,7 +168,7 @@ function CashFlowEntryPanel({ cashFlow, onUpdateCashFlow }) {
             padding: "6px 10px",
             background: "transparent",
             fontFamily: MONO,
-            fontSize: 13,
+            fontSize: 14,
             color: COLORS.ink,
           }}
         />
@@ -197,7 +197,7 @@ function DailySummaryListBox({ children, isEmpty }) {
   return (
     <div style={{ border: `1.5px solid ${COLORS.line}`, borderRadius: 10, background: COLORS.paper, maxHeight: 240, overflowY: "auto" }}>
       {isEmpty ? (
-        <div style={{ padding: 20, textAlign: "center", fontSize: 12.5, color: COLORS.inkSoft }}>データがありません</div>
+        <div style={{ padding: 20, textAlign: "center", fontSize: 13.5, color: COLORS.inkSoft }}>データがありません</div>
       ) : (
         children
       )}
@@ -207,7 +207,7 @@ function DailySummaryListBox({ children, isEmpty }) {
 
 function DailySummaryRow({ children }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: `1px dashed ${COLORS.line}`, fontSize: 12.5 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: `1px dashed ${COLORS.line}`, fontSize: 13.5 }}>
       {children}
     </div>
   );
@@ -229,7 +229,7 @@ function CashFlowSummaryTable({ rows }) {
           </DailySummaryRow>
         ))}
       </DailySummaryListBox>
-      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", fontSize: 13, fontWeight: 700 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", fontSize: 14, fontWeight: 700 }}>
         <span style={{ color: COLORS.ink }}>合計</span>
         <span style={{ fontFamily: MONO, color: COLORS.teal }}>{formatYen(total)}</span>
       </div>
@@ -239,7 +239,7 @@ function CashFlowSummaryTable({ rows }) {
 
 function DailySalesTable({ sales }) {
   if (sales.length === 0) {
-    return <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "16px 0", textAlign: "center" }}>該当する会計データがありません</div>;
+    return <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "16px 0", textAlign: "center" }}>該当する会計データがありません</div>;
   }
   return (
     <div style={{ overflowX: "auto" }}>
@@ -251,7 +251,7 @@ function DailySalesTable({ sales }) {
             gap: 4,
             padding: "8px 10px",
             borderBottom: `1px solid ${COLORS.line}`,
-            fontSize: 11.5,
+            fontSize: 12.5,
             color: COLORS.inkSoft,
             fontWeight: 700,
           }}
@@ -281,7 +281,7 @@ function DailySalesTable({ sales }) {
               gap: 4,
               padding: "8px 10px",
               borderBottom: `1px dashed ${COLORS.line}`,
-              fontSize: 12.5,
+              fontSize: 13.5,
               fontFamily: MONO,
               alignItems: "center",
             }}
@@ -314,7 +314,7 @@ function DailySalesTable({ sales }) {
 
 function DailyShiftTable({ shifts, employees, rankBonusRates }) {
   if (shifts.length === 0) {
-    return <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "16px 0", textAlign: "center" }}>勤怠記録がまだありません。</div>;
+    return <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "16px 0", textAlign: "center" }}>勤怠記録がまだありません。</div>;
   }
   // 勤怠一覧(SHIFT_TABLE_COLS)から先頭の「操作」列(支払い/編集・削除ボタン)を除いた列幅。
   // 日次集計は閲覧専用のため編集操作は持たせない(編集は勤怠入力/一覧画面で行う)。
@@ -332,7 +332,7 @@ function DailyShiftTable({ shifts, employees, rankBonusRates }) {
             gap: 4,
             padding: "8px 10px",
             borderBottom: `1px solid ${COLORS.line}`,
-            fontSize: 11.5,
+            fontSize: 12.5,
             color: COLORS.inkSoft,
             fontWeight: 700,
           }}
@@ -362,7 +362,7 @@ function DailyShiftTable({ shifts, employees, rankBonusRates }) {
                 gap: 4,
                 padding: "8px 10px",
                 borderBottom: `1px dashed ${COLORS.line}`,
-                fontSize: 12.5,
+                fontSize: 13.5,
                 fontFamily: MONO,
                 alignItems: "center",
               }}
@@ -416,21 +416,21 @@ function printDailySummary({ targetDate, summaryRows, remaining, expenses, incom
 
   const style = `
     body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif; color: #20291F; padding: 24px; }
-    h1 { font-size: 18px; margin: 0 0 4px; }
-    h2 { font-size: 13px; margin: 22px 0 8px; border-bottom: 2px solid #1D4E4B; padding-bottom: 4px; }
-    .sub { font-size: 12px; color: #5B6459; margin-bottom: 18px; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    h1 { font-size: 19px; margin: 0 0 4px; }
+    h2 { font-size: 14px; margin: 22px 0 8px; border-bottom: 2px solid #1D4E4B; padding-bottom: 4px; }
+    .sub { font-size: 13px; color: #5B6459; margin-bottom: 18px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th, td { border-bottom: 1px solid #DCD4C4; padding: 5px 6px; text-align: left; }
     th { color: #5B6459; font-weight: 700; }
     .num { text-align: right; }
     tr.highlight td { font-weight: 700; }
-    .remaining { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1.5px solid #20291F; }
+    .remaining { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1.5px solid #20291F; }
     .cols { display: flex; gap: 24px; }
     .cols > div { flex: 1; min-width: 0; }
     .no-print { margin-bottom: 18px; }
     .no-print button {
       font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
-      font-size: 13px; font-weight: 700; color: #1D4E4B; background: #E4EEE3;
+      font-size: 14px; font-weight: 700; color: #1D4E4B; background: #E4EEE3;
       border: 1.5px solid #1D4E4B; border-radius: 8px; padding: 10px 16px; cursor: pointer;
     }
     @media print { body { padding: 8px; } .no-print { display: none; } }
@@ -610,7 +610,7 @@ function DailySummaryPanel({ data }) {
             type="date"
             value={dateValue}
             onChange={(e) => { setDateValue(e.target.value); setMode("date"); }}
-            style={{ border: "none", background: "transparent", fontFamily: MONO, fontSize: 13, color: COLORS.ink }}
+            style={{ border: "none", background: "transparent", fontFamily: MONO, fontSize: 14, color: COLORS.ink }}
           />
         </div>
         <button
@@ -625,7 +625,7 @@ function DailySummaryPanel({ data }) {
             border: `1.5px solid ${COLORS.line}`,
             background: "transparent",
             color: COLORS.inkSoft,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
             cursor: "pointer",
           }}
@@ -645,7 +645,7 @@ function DailySummaryPanel({ data }) {
                 justifyContent: "space-between",
                 padding: "7px 0",
                 borderBottom: `1px dashed ${COLORS.line}`,
-                fontSize: row.highlight ? 14 : 13,
+                fontSize: row.highlight ? 15 : 14,
                 color: row.highlight ? COLORS.ink : COLORS.inkSoft,
                 fontWeight: row.highlight ? 700 : 400,
               }}
@@ -657,27 +657,27 @@ function DailySummaryPanel({ data }) {
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 10, marginTop: 4 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>残金</span>
-            <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: remaining < 0 ? COLORS.brick : COLORS.teal }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink }}>残金</span>
+            <span style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: remaining < 0 ? COLORS.brick : COLORS.teal }}>
               {remaining < 0 ? "-" : ""}{formatYen(Math.abs(remaining))}
             </span>
           </div>
         </div>
 
         <div style={{ flex: "1 1 0", minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>出金</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>出金</div>
           <CashFlowSummaryTable rows={record.expenses} />
         </div>
 
         <div style={{ flex: "1 1 0", minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>入金</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>入金</div>
           <CashFlowSummaryTable rows={record.income} />
         </div>
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>売上履歴</div>
-        <div style={{ display: "flex", gap: 20, fontFamily: MONO, fontSize: 13, color: COLORS.inkSoft, marginBottom: 12 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>売上履歴</div>
+        <div style={{ display: "flex", gap: 20, fontFamily: MONO, fontSize: 14, color: COLORS.inkSoft, marginBottom: 12 }}>
           <span>会計 {sales.length}件</span>
           <span>合計 {formatYen(salesTotal)}</span>
         </div>
@@ -685,8 +685,8 @@ function DailySummaryPanel({ data }) {
       </div>
 
       <div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>勤怠一覧</div>
-        <div style={{ display: "flex", gap: 20, fontFamily: MONO, fontSize: 13, color: COLORS.inkSoft, marginBottom: 12 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>勤怠一覧</div>
+        <div style={{ display: "flex", gap: 20, fontFamily: MONO, fontSize: 14, color: COLORS.inkSoft, marginBottom: 12 }}>
           <span>勤怠 {shifts.length}件</span>
           <span>合計 {formatYen(laborCost)}</span>
         </div>
@@ -708,7 +708,7 @@ const graphDateInputStyle = {
   borderRadius: 8,
   border: `1.5px solid ${COLORS.line}`,
   fontFamily: MONO,
-  fontSize: 13,
+  fontSize: 14,
   color: COLORS.ink,
   background: "#fff",
 };
@@ -963,19 +963,19 @@ function AggregationGraphPanel({ data }) {
         {granularity === "daily" ? (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="date" value={dailyFrom} onChange={(e) => handleDailyFromChange(e.target.value)} style={graphDateInputStyle} />
-            <span style={{ color: COLORS.inkSoft, fontSize: 13 }}>〜</span>
+            <span style={{ color: COLORS.inkSoft, fontSize: 14 }}>〜</span>
             <input type="date" value={dailyTo} onChange={(e) => handleDailyToChange(e.target.value)} style={graphDateInputStyle} />
           </div>
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="month" value={monthlyFrom} onChange={(e) => handleMonthlyFromChange(e.target.value)} style={graphDateInputStyle} />
-            <span style={{ color: COLORS.inkSoft, fontSize: 13 }}>〜</span>
+            <span style={{ color: COLORS.inkSoft, fontSize: 14 }}>〜</span>
             <input type="month" value={monthlyTo} onChange={(e) => handleMonthlyToChange(e.target.value)} style={graphDateInputStyle} />
           </div>
         )}
       </div>
 
-      <div style={{ fontSize: 11, color: COLORS.inkSoft, marginBottom: 16 }}>
+      <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 16 }}>
         {granularity === "daily" ? "※期間は最大3ヶ月まで指定できます" : "※期間は最大3年まで指定できます"}
       </div>
 
@@ -983,7 +983,7 @@ function AggregationGraphPanel({ data }) {
         <canvas ref={canvasRef} width={width} height={height} style={{ display: "block" }} />
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontSize: 12, margin: "10px 0 4px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontSize: 13, margin: "10px 0 4px" }}>
         {PAYMENT_METHOD_ORDER.map((k) => (
           <div key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 12, height: 12, borderRadius: 3, background: PAYMENT_METHOD_COLORS[k], display: "inline-block" }} />
@@ -1046,7 +1046,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
             type="date"
             value={dateValue}
             onChange={(e) => { setDateValue(e.target.value); setMode("date"); }}
-            style={{ border: "none", background: "transparent", fontFamily: MONO, fontSize: 13, color: COLORS.ink }}
+            style={{ border: "none", background: "transparent", fontFamily: MONO, fontSize: 14, color: COLORS.ink }}
           />
         </div>
         <button
@@ -1060,7 +1060,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
             border: `1.5px solid ${COLORS.teal}`,
             background: "transparent",
             color: COLORS.teal,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
             cursor: "pointer",
           }}
@@ -1084,7 +1084,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
             border: `1.5px solid ${COLORS.line}`,
             background: "transparent",
             color: COLORS.inkSoft,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
             cursor: "pointer",
           }}
@@ -1099,7 +1099,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
           display: "flex",
           gap: 20,
           fontFamily: MONO,
-          fontSize: 13,
+          fontSize: 14,
           color: COLORS.inkSoft,
           marginBottom: 12,
         }}
@@ -1109,7 +1109,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
       </div>
 
       {filtered.length === 0 && (
-        <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "40px 0", textAlign: "center" }}>
+        <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "40px 0", textAlign: "center" }}>
           該当する会計データがありません
         </div>
       )}
@@ -1123,7 +1123,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
                 gap: 4,
                 padding: "8px 10px",
                 borderBottom: `1px solid ${COLORS.line}`,
-                fontSize: 11.5,
+                fontSize: 12.5,
                 color: COLORS.inkSoft,
                 fontWeight: 700,
               }}
@@ -1156,7 +1156,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
                   textAlign: "left",
                   padding: "8px 10px",
                   borderBottom: `1px dashed ${COLORS.line}`,
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   fontFamily: MONO,
                   background: "transparent",
                   border: "none",
@@ -1170,7 +1170,7 @@ function SalesHistoryPanel({ salesHistory, onSelectSale, onOpenManualEntry }) {
               >
                 <div style={{ fontFamily: SANS, color: COLORS.ink }}>
                   {s.voided && (
-                    <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: COLORS.brick, border: `1px solid ${COLORS.brick}`, borderRadius: 4, padding: "0 4px", marginRight: 6 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: COLORS.brick, border: `1px solid ${COLORS.brick}`, borderRadius: 4, padding: "0 4px", marginRight: 6 }}>
                       取消済み
                     </span>
                   )}
@@ -1268,13 +1268,13 @@ function SalesManagementScreen({ data, onUpdateCashFlow, onOpenSettings, activeH
    同伴/呼込みの担当者選択は、退職済み(active:false)の従業員を除外し、
    GuestCountModalと同様にログイン中の管理者本人を初期選択する。
 --------------------------------------------------------- */
-const manualEntryLabelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 6 };
+const manualEntryLabelStyle = { display: "block", fontSize: 13, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 6 };
 const manualEntryInputStyle = {
   width: "100%",
   padding: "9px 10px",
   borderRadius: 8,
   border: `1.5px solid ${COLORS.line}`,
-  fontSize: 14,
+  fontSize: 15,
   fontFamily: SANS,
   color: COLORS.ink,
   background: COLORS.paper,
@@ -1289,7 +1289,7 @@ function manualEntryQuickBtnStyle(active) {
     color: active ? "#FBF9F4" : COLORS.ink,
     fontWeight: 700,
     fontFamily: MONO,
-    fontSize: 15,
+    fontSize: 16,
     cursor: "pointer",
   };
 }
@@ -1326,7 +1326,7 @@ function ManualSaleInfoStep({ data, initial, currentEmployeeName, onCancel, onNe
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header title="売上入力 - 基本情報" onBack={onCancel} />
       <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 420, margin: "0 auto", width: "100%" }}>
-        <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: COLORS.ink }}>
+        <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 8, padding: "10px 14px", fontSize: 13.5, color: COLORS.ink }}>
           画面操作ができなかった場合などに、確定済みの会計を後から記録するための機能です。メモ欄の先頭に自動で「(手動入力)」と記録されます。
         </div>
 
@@ -1354,7 +1354,7 @@ function ManualSaleInfoStep({ data, initial, currentEmployeeName, onCancel, onNe
             <TimeStepSelect value={endTime} onChange={setEndTime} />
           </div>
         </div>
-        {timeError && <div style={{ fontSize: 12.5, color: COLORS.brick, marginTop: -8 }}>終了時刻は開始時刻より後にしてください。</div>}
+        {timeError && <div style={{ fontSize: 13.5, color: COLORS.brick, marginTop: -8 }}>終了時刻は開始時刻より後にしてください。</div>}
 
         <div>
           <label style={manualEntryLabelStyle}>人数</label>
@@ -1367,7 +1367,7 @@ function ManualSaleInfoStep({ data, initial, currentEmployeeName, onCancel, onNe
             <button onClick={() => setGuests((c) => Math.max(1, c - 1))} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${COLORS.line}`, background: COLORS.paper, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Minus size={15} />
             </button>
-            <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, minWidth: 50, textAlign: "center" }}>{guests}名</span>
+            <span style={{ fontFamily: MONO, fontSize: 23, fontWeight: 700, minWidth: 50, textAlign: "center" }}>{guests}名</span>
             <button onClick={() => setGuests((c) => Math.min(99, c + 1))} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${COLORS.line}`, background: COLORS.paper, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Plus size={15} />
             </button>
@@ -1377,17 +1377,17 @@ function ManualSaleInfoStep({ data, initial, currentEmployeeName, onCancel, onNe
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <input type="checkbox" checked={companionKind === "call"} onChange={() => toggleKind("call")} style={{ width: 16, height: 16 }} />
-            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>呼込み</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>呼込み</span>
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <input type="checkbox" checked={companionKind === "companion"} onChange={() => toggleKind("companion")} style={{ width: 16, height: 16 }} />
-            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>同伴</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>同伴</span>
           </label>
         </div>
 
         {companionKind && (
           employees.length === 0 ? (
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center" }}>
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, textAlign: "center" }}>
               先にマスタ設定の「従業員マスタ」でスタッフを登録してください。
             </div>
           ) : (
@@ -1509,10 +1509,10 @@ function ManualSaleEntryScreen({ data, editingSale, currentEmployeeName, onCance
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Header title="内容を確認" onBack={() => setStep("checkout")} />
       <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
-        <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: COLORS.ink }}>
+        <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 8, padding: "10px 14px", fontSize: 13.5, color: COLORS.ink }}>
           内容を確認してください。
         </div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>{seatDisplayLabel(info.seatNum, seatName)}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>{seatDisplayLabel(info.seatNum, seatName)}</div>
         <SaleSummaryCard sale={previewRecord} />
       </div>
       <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper }}>

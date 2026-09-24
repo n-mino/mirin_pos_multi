@@ -112,7 +112,7 @@ const payrollSelectStyle = {
   borderRadius: 6,
   border: `1.5px solid ${COLORS.line}`,
   fontFamily: MONO,
-  fontSize: 13,
+  fontSize: 14,
   background: COLORS.paper,
   color: COLORS.ink,
 };
@@ -124,7 +124,7 @@ function payrollPillStyle(active) {
     border: `1.5px solid ${active ? COLORS.teal : COLORS.line}`,
     background: active ? COLORS.teal : "transparent",
     color: active ? "#FBF9F4" : COLORS.inkSoft,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 700,
     whiteSpace: "nowrap",
     flexShrink: 0,
@@ -150,7 +150,7 @@ const payrollFieldInputStyle = {
   borderRadius: 6,
   border: `1.5px solid ${COLORS.line}`,
   marginTop: 4,
-  fontSize: 14,
+  fontSize: 15,
   background: COLORS.paper,
   color: COLORS.ink,
 };
@@ -225,7 +225,7 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onCheckPending,
         )}
       </div>
       {employees.length === 0 ? (
-        <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "20px 0", textAlign: "center" }}>
+        <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "20px 0", textAlign: "center" }}>
           従業員がまだ登録されていません。
         </div>
       ) : (
@@ -245,21 +245,21 @@ function EmployeeListPanel({ employees, onAdd, onEdit, onDelete, onCheckPending,
             >
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: COLORS.ink }}>
                     {emp.name}
                     {emp.loginUsername && (
-                      <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.inkSoft, fontFamily: MONO }}>
+                      <span style={{ fontSize: 13, fontWeight: 400, color: COLORS.inkSoft, fontFamily: MONO }}>
                         （{emp.loginUsername}）
                       </span>
                     )}
                   </span>
                   {emp.role === "admin" && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.teal, border: `1px solid ${COLORS.teal}`, borderRadius: 4, padding: "1px 5px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, border: `1px solid ${COLORS.teal}`, borderRadius: 4, padding: "1px 5px" }}>
                       管理者
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.inkSoft, fontFamily: MONO }}>時給 {formatYen(emp.hourlyWage)}</div>
+                <div style={{ fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO }}>時給 {formatYen(emp.hourlyWage)}</div>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => onEdit(emp)} style={payrollIconBtnStyle}>
@@ -297,11 +297,11 @@ function EmployeeEditModal({ employee, onCancel, onSave, onPromote, onDemote, on
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20, overflowY: "auto" }}>
       <div style={{ background: COLORS.paper, borderRadius: 12, padding: 24, width: "100%", maxWidth: 380, boxShadow: "0 12px 40px rgba(0,0,0,0.25)", margin: "20px 0" }}>
-        <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, marginBottom: 18, color: COLORS.ink }}>
+        <div style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 700, marginBottom: 18, color: COLORS.ink }}>
           {employee.id ? "従業員を編集" : "従業員を追加"}
         </div>
 
-        <label style={{ fontSize: 12, color: COLORS.inkSoft }}>名前</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft }}>名前</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -309,7 +309,7 @@ function EmployeeEditModal({ employee, onCancel, onSave, onPromote, onDemote, on
           style={{ ...payrollFieldInputStyle, marginBottom: 14 }}
         />
 
-        <label style={{ fontSize: 12, color: COLORS.inkSoft }}>時給(円)</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft }}>時給(円)</label>
         <input
           type="number"
           min="0"
@@ -371,21 +371,21 @@ function RankBonusSettingsPanel({ rankBonusRates, onSave }) {
 
   return (
     <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20 }}>
-      <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>ランク別時給アップ額</div>
-      <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 14, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>ランク別時給アップ額</div>
+      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
         勤怠入力でランクを選ぶと、時給に1時間あたりこの金額が加算されます。全従業員共通の設定です。
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-        <label style={{ fontSize: 12, color: COLORS.inkSoft, width: 100, flexShrink: 0 }}>呼込み(円/時)</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft, width: 100, flexShrink: 0 }}>呼込み(円/時)</label>
         <input type="number" min="0" value={call} onChange={(e) => setCall(e.target.value)} style={{ ...payrollFieldInputStyle, marginTop: 0, fontFamily: MONO }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-        <label style={{ fontSize: 12, color: COLORS.inkSoft, width: 100, flexShrink: 0 }}>同伴(円/時)</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft, width: 100, flexShrink: 0 }}>同伴(円/時)</label>
         <input type="number" min="0" value={companion} onChange={(e) => setCompanion(e.target.value)} style={{ ...payrollFieldInputStyle, marginTop: 0, fontFamily: MONO }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-        <label style={{ fontSize: 12, color: COLORS.inkSoft, width: 100, flexShrink: 0 }}>その他(円/時)</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft, width: 100, flexShrink: 0 }}>その他(円/時)</label>
         <input type="number" min="0" value={other} onChange={(e) => setOther(e.target.value)} placeholder="任意" style={{ ...payrollFieldInputStyle, marginTop: 0, fontFamily: MONO }} />
       </div>
 
@@ -423,23 +423,23 @@ function SalesBackRateSettingsPanel({ salesBackRates, onSave }) {
 
   return (
     <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20, marginTop: 20 }}>
-      <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 700, marginBottom: 18 }}>売上バックの率(%)</div>
+      <div style={{ fontSize: 14, color: COLORS.ink, fontWeight: 700, marginBottom: 18 }}>売上バックの率(%)</div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-        <label style={{ fontSize: 12, color: COLORS.inkSoft, width: 160, flexShrink: 0 }}>小計30,000超</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft, width: 160, flexShrink: 0 }}>小計30,000超</label>
         <input type="number" min="0" value={over30k} onChange={(e) => setOver30k(e.target.value)} style={{ ...payrollFieldInputStyle, marginTop: 0, fontFamily: MONO }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-        <label style={{ fontSize: 12, color: COLORS.inkSoft, width: 160, flexShrink: 0 }}>5人以上+小計50,000超</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft, width: 160, flexShrink: 0 }}>5人以上+小計50,000超</label>
         <input type="number" min="0" value={group5over50k} onChange={(e) => setGroup5over50k(e.target.value)} style={{ ...payrollFieldInputStyle, marginTop: 0, fontFamily: MONO }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-        <label style={{ fontSize: 12, color: COLORS.inkSoft, width: 160, flexShrink: 0 }}>ボトル関連</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft, width: 160, flexShrink: 0 }}>ボトル関連</label>
         <input type="number" min="0" value={bottle} onChange={(e) => setBottle(e.target.value)} style={{ ...payrollFieldInputStyle, marginTop: 0, fontFamily: MONO }} />
       </div>
 
       <div style={{ marginBottom: 18 }}>
-        <label style={{ fontSize: 12, color: COLORS.inkSoft }}>円未満の端数処理</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft }}>円未満の端数処理</label>
         <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
           {PAYROLL_ROUND_MODES.map((opt) => (
             <button
@@ -546,18 +546,18 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
 
   return (
     <div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 14 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 14 }}>
         {editingShift ? "勤怠編集" : "勤怠入力"}
       </div>
 
       {employees.length === 0 ? (
-        <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "20px 0", textAlign: "center" }}>
+        <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "20px 0", textAlign: "center" }}>
           先にマスタ設定の「従業員マスタ」でスタッフを登録してください。
         </div>
       ) : (
         <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <label style={{ fontSize: 12, color: COLORS.inkSoft }}>従業員</label>
+            <label style={{ fontSize: 13, color: COLORS.inkSoft }}>従業員</label>
             {lockedEmployeeId ? (
               <div style={{ ...payrollFieldInputStyle, fontFamily: MONO, display: "flex", alignItems: "center", background: COLORS.bg, color: COLORS.ink }}>
                 {employees.find((e) => e.id === lockedEmployeeId)?.name || ""}
@@ -575,26 +575,26 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
           </div>
 
           <div style={{ minWidth: 0 }}>
-            <label style={{ fontSize: 12, color: COLORS.inkSoft }}>日付</label>
+            <label style={{ fontSize: 13, color: COLORS.inkSoft }}>日付</label>
             <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO, minWidth: 0 }} />
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>開始時刻(15分単位)</label>
+              <label style={{ fontSize: 13, color: COLORS.inkSoft }}>開始時刻(15分単位)</label>
               <TimeStepSelect value={form.startTime} onChange={(v) => setField("startTime", v)} />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>終了時刻(15分単位・空欄可)</label>
+              <label style={{ fontSize: 13, color: COLORS.inkSoft }}>終了時刻(15分単位・空欄可)</label>
               <TimeStepSelect value={form.endTime} onChange={(v) => setField("endTime", v)} />
-              <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginTop: 4 }}>
                 空欄のまま保存すると「勤務中」として記録され、退勤時刻は後から編集で入力できます
               </div>
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: 12, color: COLORS.inkSoft }}>ランク(時給アップ条件)</label>
+            <label style={{ fontSize: 13, color: COLORS.inkSoft }}>ランク(時給アップ条件)</label>
             <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
               {PAYROLL_RANK_OPTIONS.map((opt) => {
                 const active = form.rankKey === opt.key;
@@ -615,16 +615,16 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
                 );
               })}
             </div>
-            <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginTop: 4 }}>
               選択中のボタンをもう一度押すと解除できます(複数は選択できません)
             </div>
           </div>
 
           {!lockedEmployeeId && (
             <div>
-              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>日給(円・任意)</label>
+              <label style={{ fontSize: 13, color: COLORS.inkSoft }}>日給(円・任意)</label>
               <input type="number" min="0" value={form.dailyWage} onChange={(e) => setField("dailyWage", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
-              <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginTop: 4 }}>
                 値を入力すると、時間による計算の代わりに日給が使用されます
               </div>
             </div>
@@ -633,23 +633,23 @@ function ShiftEntryPanel({ employees, shifts, editingShift, onSave, onCancelEdit
           {!lockedEmployeeId && (
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 12, color: COLORS.inkSoft }}>同伴バック(円)</label>
+                <label style={{ fontSize: 13, color: COLORS.inkSoft }}>同伴バック(円)</label>
                 <input type="number" min="0" value={form.option} onChange={(e) => setField("option", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 12, color: COLORS.inkSoft }}>売上バック(円)</label>
+                <label style={{ fontSize: 13, color: COLORS.inkSoft }}>売上バック(円)</label>
                 <input type="number" min="0" value={form.option2} onChange={(e) => setField("option2", e.target.value)} style={{ ...payrollFieldInputStyle, fontFamily: MONO }} />
               </div>
             </div>
           )}
 
           <div>
-            <label style={{ fontSize: 12, color: COLORS.inkSoft }}>メモ(任意)</label>
+            <label style={{ fontSize: 13, color: COLORS.inkSoft }}>メモ(任意)</label>
             <input type="text" value={form.note} onChange={(e) => setField("note", e.target.value)} style={payrollFieldInputStyle} />
           </div>
 
           {error && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.brick, fontSize: 12.5 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.brick, fontSize: 13.5 }}>
               <AlertCircle size={14} /> {error}
             </div>
           )}
@@ -722,27 +722,27 @@ function SalesBackBreakdownCard({ salesHistory, employees, dateMode, dateValue, 
 
   return (
     <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20, marginTop: 20 }}>
-      <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 700, marginBottom: 12 }}>売上バック内訳({label})</div>
+      <div style={{ fontSize: 14, color: COLORS.ink, fontWeight: 700, marginBottom: 12 }}>売上バック内訳({label})</div>
       {entries.length === 0 ? (
-        <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center", padding: "6px 0" }}>該当する売上バックはありません。</div>
+        <div style={{ fontSize: 13, color: COLORS.inkSoft, textAlign: "center", padding: "6px 0" }}>該当する売上バックはありません。</div>
       ) : (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: cols, gap: 8, padding: "0 0 4px", fontSize: 11.5, color: COLORS.inkSoft, fontWeight: 700 }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, gap: 8, padding: "0 0 4px", fontSize: 12.5, color: COLORS.inkSoft, fontWeight: 700 }}>
             <span>名前</span>
             <span style={{ textAlign: "right" }}>件数</span>
             <span style={{ textAlign: "right" }}>合計金額</span>
           </div>
           {entries.map(([name, v]) => (
-            <div key={name} style={{ display: "grid", gridTemplateColumns: cols, gap: 8, alignItems: "center", padding: "5px 0", borderBottom: `1px dashed ${COLORS.line}`, fontSize: 13, color: COLORS.ink }}>
+            <div key={name} style={{ display: "grid", gridTemplateColumns: cols, gap: 8, alignItems: "center", padding: "5px 0", borderBottom: `1px dashed ${COLORS.line}`, fontSize: 14, color: COLORS.ink }}>
               <span>{name}</span>
               <span style={{ fontFamily: MONO, color: COLORS.inkSoft, textAlign: "right" }}>{v.count}件</span>
               <span style={{ fontFamily: MONO, fontWeight: 700, color: COLORS.sage, textAlign: "right" }}>{formatYen(v.amount)}</span>
             </div>
           ))}
           <div style={{ display: "grid", gridTemplateColumns: cols, gap: 8, alignItems: "center", paddingTop: 8, marginTop: 4 }}>
-            <span style={{ fontSize: 12, color: COLORS.inkSoft, fontWeight: 700 }}>合計</span>
-            <span style={{ fontFamily: MONO, fontSize: 12, color: COLORS.inkSoft, textAlign: "right" }}>{totalCount}件</span>
-            <span style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: COLORS.ink, textAlign: "right" }}>{formatYen(totalAmount)}</span>
+            <span style={{ fontSize: 13, color: COLORS.inkSoft, fontWeight: 700 }}>合計</span>
+            <span style={{ fontFamily: MONO, fontSize: 13, color: COLORS.inkSoft, textAlign: "right" }}>{totalCount}件</span>
+            <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: COLORS.ink, textAlign: "right" }}>{formatYen(totalAmount)}</span>
           </div>
         </>
       )}
@@ -786,28 +786,28 @@ function StaffCloseShiftControl({ shift, onSave }) {
     <>
       <button
         onClick={() => { setEditing(true); setEndTime(""); setNote(shift.note || ""); setError(""); }}
-        style={{ fontSize: 11, fontWeight: 700, color: COLORS.teal, textDecoration: "underline", background: "transparent", border: "none", cursor: "pointer", padding: 0, marginLeft: 6 }}
+        style={{ fontSize: 12, fontWeight: 700, color: COLORS.teal, textDecoration: "underline", background: "transparent", border: "none", cursor: "pointer", padding: 0, marginLeft: 6 }}
       >
         退勤時刻を入力
       </button>
       {editing && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 150, padding: 20, overflowY: "auto" }}>
           <div style={{ background: COLORS.paper, borderRadius: 12, padding: 24, width: "100%", maxWidth: 300, boxShadow: "0 12px 40px rgba(0,0,0,0.25)", margin: "20px 0" }}>
-            <div style={{ fontFamily: DISPLAY, fontSize: 17, fontWeight: 700, marginBottom: 4, color: COLORS.ink }}>
+            <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, marginBottom: 4, color: COLORS.ink }}>
               退勤時刻を入力
             </div>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 16 }}>
               {shift.date} {shift.startTime}〜
             </div>
             <TimeStepSelect value={endTime} onChange={setEndTime} />
-            <label style={{ fontSize: 12, color: COLORS.inkSoft, display: "block", marginTop: 14 }}>メモ(任意)</label>
+            <label style={{ fontSize: 13, color: COLORS.inkSoft, display: "block", marginTop: 14 }}>メモ(任意)</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               style={{ ...payrollFieldInputStyle, marginTop: 4 }}
             />
-            {error && <div style={{ color: COLORS.brick, fontSize: 12, marginTop: 10 }}>{error}</div>}
+            {error && <div style={{ color: COLORS.brick, fontSize: 13, marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
               <TicketButton variant="ghost" onClick={() => setEditing(false)} style={{ flex: 1 }}>キャンセル</TicketButton>
               <TicketButton variant="primary" onClick={handleSave} style={{ flex: 1 }}>保存</TicketButton>
@@ -908,7 +908,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
             type="date"
             value={dateValue}
             onChange={(e) => { setDateValue(e.target.value); setDateMode("date"); }}
-            style={{ border: "none", background: "transparent", fontFamily: MONO, fontSize: 13, color: COLORS.ink }}
+            style={{ border: "none", background: "transparent", fontFamily: MONO, fontSize: 14, color: COLORS.ink }}
           />
         </div>
         {!lockedEmployeeId && viewMode === "individual" && employees.length > 0 && (
@@ -931,7 +931,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
               border: `1.5px solid ${COLORS.line}`,
               background: "transparent",
               color: COLORS.inkSoft,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
             }}
@@ -949,7 +949,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
           flexWrap: "wrap",
           gap: 20,
           fontFamily: MONO,
-          fontSize: 13,
+          fontSize: 14,
           color: COLORS.inkSoft,
           marginBottom: 12,
         }}
@@ -965,7 +965,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
       </div>
 
       {list.length === 0 ? (
-        <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "20px 0", textAlign: "center" }}>
+        <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "20px 0", textAlign: "center" }}>
           勤怠記録がまだありません。
         </div>
       ) : (
@@ -978,7 +978,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                 gap: 4,
                 padding: "8px 10px",
                 borderBottom: `1px solid ${COLORS.line}`,
-                fontSize: 11.5,
+                fontSize: 12.5,
                 color: COLORS.inkSoft,
                 fontWeight: 700,
               }}
@@ -1009,7 +1009,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                     gap: 4,
                     padding: "8px 10px",
                     borderBottom: `1px dashed ${COLORS.line}`,
-                    fontSize: 12.5,
+                    fontSize: 13.5,
                     fontFamily: MONO,
                     alignItems: "center",
                   }}
@@ -1205,7 +1205,7 @@ function AggregationTable({ periodKeys, map, activeEmployees, scope }) {
     return (
       <div style={{ overflowX: "auto" }}>
         <div style={{ minWidth: 120 + activeEmployees.length * 100 + 110 }}>
-          <div style={{ display: "grid", gridTemplateColumns: cols, gap: 4, padding: "8px 10px", borderBottom: `1px solid ${COLORS.line}`, fontSize: 11.5, color: COLORS.inkSoft, fontWeight: 700 }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, gap: 4, padding: "8px 10px", borderBottom: `1px solid ${COLORS.line}`, fontSize: 12.5, color: COLORS.inkSoft, fontWeight: 700 }}>
             <div>期間</div>
             {activeEmployees.map((emp) => <div key={emp.id} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{emp.name}</div>)}
             <div>合計</div>
@@ -1214,7 +1214,7 @@ function AggregationTable({ periodKeys, map, activeEmployees, scope }) {
             const empMap = map.get(key) || new Map();
             let sum = 0;
             return (
-              <div key={key} style={{ display: "grid", gridTemplateColumns: cols, gap: 4, padding: "8px 10px", borderBottom: `1px dashed ${COLORS.line}`, fontSize: 12.5, fontFamily: MONO, alignItems: "center" }}>
+              <div key={key} style={{ display: "grid", gridTemplateColumns: cols, gap: 4, padding: "8px 10px", borderBottom: `1px dashed ${COLORS.line}`, fontSize: 13.5, fontFamily: MONO, alignItems: "center" }}>
                 <div style={{ fontFamily: SANS, color: COLORS.ink }}>{key}</div>
                 {activeEmployees.map((emp) => {
                   const v = empMap.get(emp.id) || { total: 0 };
@@ -1238,9 +1238,9 @@ function AggregationTable({ periodKeys, map, activeEmployees, scope }) {
         empMap.forEach((v) => { hoursSum += v.hours; totalSum += v.total; });
         return (
           <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.ink }}>{key}</span>
-            <span style={{ fontFamily: MONO, fontSize: 12, color: COLORS.inkSoft }}>{formatHours(hoursSum)}</span>
-            <span style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: COLORS.teal }}>{formatYen(totalSum)}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>{key}</span>
+            <span style={{ fontFamily: MONO, fontSize: 13, color: COLORS.inkSoft }}>{formatHours(hoursSum)}</span>
+            <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: COLORS.teal }}>{formatYen(totalSum)}</span>
           </div>
         );
       })}
@@ -1303,14 +1303,14 @@ function AggregationPanel({ employees, shifts, rankBonusRates }) {
       </div>
 
       {isEmpty ? (
-        <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "40px 0", textAlign: "center" }}>
+        <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "40px 0", textAlign: "center" }}>
           集計するデータがありません。
         </div>
       ) : (
         <>
           <AggregationChart periodKeys={periodKeys} map={map} activeEmployees={activeEmployees} employees={employees} stacked={stacked} />
           {stacked && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 12, margin: "10px 0 16px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 13, margin: "10px 0 16px" }}>
               {activeEmployees.map((emp) => (
                 <div key={emp.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ width: 12, height: 12, borderRadius: 3, background: payrollEmployeeColor(emp.id, employees), display: "inline-block" }} />
@@ -1416,7 +1416,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
                 <span
                   onClick={onChangePassword}
                   title="タップしてパスワードを変更"
-                  style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap", cursor: "pointer", textDecoration: "underline dotted" }}
+                  style={{ fontSize: 13, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap", cursor: "pointer", textDecoration: "underline dotted" }}
                 >
                   {myEmployee.name}
                 </span>
@@ -1429,7 +1429,7 @@ function PayrollScreen({ payroll, salesHistory, onUpdatePayroll, onOpenSettings,
                   border: "1.5px solid rgba(255,255,255,0.35)",
                   background: "transparent",
                   color: "#FBF9F4",
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 700,
                   whiteSpace: "nowrap",
                   cursor: "pointer",

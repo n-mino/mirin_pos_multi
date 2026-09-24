@@ -190,7 +190,7 @@ const STORAGE_KEY = "pos-app-data-v1";
 // ヘッダーの時計表示のフォントサイズ(px)。タブレットのシステム時計と見た目上
 // 重なってしまうため、アプリ全体を最低でもこの分だけ下にずらす(このファイル内の
 // pos-app-shellのmarginTop/heightと、index.html内の対応するCSSで使用)。
-const HEADER_CLOCK_FONT_SIZE = 11;
+const HEADER_CLOCK_FONT_SIZE = 12;
 
 // アプリ全体を下にずらす実際の量。ホーム画面に追加したPWA(standalone表示)を
 // ノッチ/Dynamic Island付きのスマートフォンで開くと、この11pxだけでは
@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/09 17:29";
+const APP_LAST_UPDATED = "2026/09/24 18:09";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -904,7 +904,7 @@ function TicketButton({ children, onClick, variant = "primary", style, disabled,
         border: `1.5px solid ${v.border}`,
         borderRadius: 8,
         padding: "12px 18px",
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: 600,
         fontFamily: SANS,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -968,7 +968,7 @@ function Header({ title, onBack, right }) {
           <div style={{ fontSize: HEADER_CLOCK_FONT_SIZE, letterSpacing: 0.5, opacity: 0.65, fontFamily: MONO, whiteSpace: "nowrap" }}>
             <HeaderClock />
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: DISPLAY, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div style={{ fontSize: 19, fontWeight: 700, fontFamily: DISPLAY, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {title}
           </div>
         </div>
@@ -1011,7 +1011,7 @@ function HeaderIconButton({ icon: Icon, onClick, title, badge }) {
             borderRadius: 8,
             background: COLORS.brick,
             color: "#FBF9F4",
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 700,
             fontFamily: MONO,
             display: "flex",
@@ -1048,7 +1048,7 @@ function HomeTabBar({ active, onSelect, role }) {
             border: `1.5px solid ${active === t.id ? COLORS.teal : COLORS.line}`,
             background: active === t.id ? COLORS.teal : "transparent",
             color: active === t.id ? "#FBF9F4" : COLORS.inkSoft,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
             whiteSpace: "nowrap",
             flexShrink: 0,
@@ -1075,7 +1075,7 @@ function Toast({ message }) {
         color: "#FBF9F4",
         padding: "10px 20px",
         borderRadius: 8,
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: 600,
         boxShadow: "0 6px 20px rgba(0,0,0,0.25)",
         zIndex: 200,
@@ -1112,7 +1112,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
               <span
                 onClick={onChangePassword}
                 title="タップしてパスワードを変更"
-                style={{ fontSize: 12, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap", cursor: "pointer", textDecoration: "underline dotted" }}
+                style={{ fontSize: 13, fontFamily: MONO, color: "#FBF9F4", opacity: 0.75, whiteSpace: "nowrap", cursor: "pointer", textDecoration: "underline dotted" }}
               >
                 {myEmployee.name}{myEmployee.role === "admin" ? "（管理者）" : ""}
               </span>
@@ -1128,7 +1128,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
                   border: "1.5px solid rgba(255,255,255,0.35)",
                   background: "transparent",
                   color: "#FBF9F4",
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 700,
                   whiteSpace: "nowrap",
                   cursor: "pointer",
@@ -1151,7 +1151,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
             gap: 20,
             alignItems: "center",
             fontFamily: MONO,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
             color: COLORS.inkSoft,
             borderBottom: `1px dashed ${COLORS.line}`,
@@ -1217,7 +1217,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
                   <span
                     style={{
                       fontFamily: DISPLAY,
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: 700,
                       color: COLORS.ink,
                       overflow: "hidden",
@@ -1229,14 +1229,14 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
                   </span>
                   {occupied && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 12, fontFamily: MONO, color: tone.fg, fontWeight: 700 }}>
+                      <span style={{ fontSize: 13, fontFamily: MONO, color: tone.fg, fontWeight: 700 }}>
                         {awaitingCheckout ? "● 会計待ち" : "● 使用中"}
                       </span>
                       {companionLabel(seat.companion) && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                           <span
                             style={{
-                              fontSize: 12,
+                              fontSize: 13,
                               fontFamily: MONO,
                               fontWeight: 700,
                               color: COLORS.paper,
@@ -1247,7 +1247,7 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
                           >
                             {companionLabel(seat.companion)}
                           </span>
-                          <span style={{ fontSize: 12, fontFamily: MONO, color: tone.fg, fontWeight: 700 }}>
+                          <span style={{ fontSize: 13, fontFamily: MONO, color: tone.fg, fontWeight: 700 }}>
                             ({companionKindLabel(companionEffectiveKind(seat.companion, seat.companionKind))})
                           </span>
                         </div>
@@ -1257,17 +1257,17 @@ function TopScreen({ data, now, onSelectSeat, onOpenSettings, activeHomeTab, onS
                 </div>
                 {occupied ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: COLORS.inkSoft }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, color: COLORS.inkSoft }}>
                       <Users size={12} /> {seat.guests}名
                       <Clock size={12} style={{ marginLeft: 6 }} />
                       <span style={{ fontFamily: MONO }}>{formatElapsed(seat.startTime, now)}</span>
                     </div>
-                    <div style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color: tone.fg }}>
+                    <div style={{ fontFamily: MONO, fontSize: 17, fontWeight: 700, color: tone.fg }}>
                       {formatYen(total)}
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 12, color: COLORS.inkSoft }}>空席・タップして開始</div>
+                  <div style={{ fontSize: 13, color: COLORS.inkSoft }}>空席・タップして開始</div>
                 )}
               </button>
             );
@@ -1330,10 +1330,10 @@ function GuestCountModal({ seatNum, employees, onConfirm, onCancel, currentEmplo
           margin: "20px 0",
         }}
       >
-        <div style={{ fontFamily: MONO, fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>
+        <div style={{ fontFamily: MONO, fontSize: 13, color: COLORS.inkSoft, marginBottom: 4 }}>
           SEAT {seatNum}
         </div>
-        <div style={{ fontFamily: DISPLAY, fontSize: 20, fontWeight: 700, color: COLORS.ink, marginBottom: 18 }}>
+        <div style={{ fontFamily: DISPLAY, fontSize: 21, fontWeight: 700, color: COLORS.ink, marginBottom: 18 }}>
           人数を入力
         </div>
 
@@ -1350,7 +1350,7 @@ function GuestCountModal({ seatNum, employees, onConfirm, onCancel, currentEmplo
                 color: count === q ? "#FBF9F4" : COLORS.ink,
                 fontWeight: 700,
                 fontFamily: MONO,
-                fontSize: 15,
+                fontSize: 16,
                 cursor: "pointer",
               }}
             >
@@ -1366,7 +1366,7 @@ function GuestCountModal({ seatNum, employees, onConfirm, onCancel, currentEmplo
           >
             <Minus size={16} />
           </button>
-          <span style={{ fontFamily: MONO, fontSize: 24, fontWeight: 700, minWidth: 50, textAlign: "center" }}>
+          <span style={{ fontFamily: MONO, fontSize: 25, fontWeight: 700, minWidth: 50, textAlign: "center" }}>
             {count}名
           </span>
           <button
@@ -1380,18 +1380,18 @@ function GuestCountModal({ seatNum, employees, onConfirm, onCancel, currentEmplo
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24, marginBottom: companionKind ? 10 : 22 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <input type="checkbox" checked={companionKind === "call"} onChange={() => toggleKind("call")} style={{ width: 16, height: 16 }} />
-            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>呼込み</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>呼込み</span>
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <input type="checkbox" checked={companionKind === "companion"} onChange={() => toggleKind("companion")} style={{ width: 16, height: 16 }} />
-            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>同伴</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>同伴</span>
           </label>
         </div>
 
         {companionKind && (
           <div style={{ marginBottom: 22 }}>
             {employees.length === 0 ? (
-              <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: COLORS.inkSoft, textAlign: "center" }}>
                 先にマスタ設定の「従業員マスタ」でスタッフを登録してください。
               </div>
             ) : (
@@ -1403,7 +1403,7 @@ function GuestCountModal({ seatNum, employees, onConfirm, onCancel, currentEmplo
                   padding: "9px 10px",
                   borderRadius: 8,
                   border: `1.5px solid ${COLORS.line}`,
-                  fontSize: 14,
+                  fontSize: 15,
                   fontFamily: SANS,
                   color: COLORS.ink,
                   background: COLORS.paper,
@@ -1455,11 +1455,11 @@ function ConfirmModal({ title, message, confirmLabel = "OK", confirmVariant = "d
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <AlertCircle size={20} color={accentColor} />
-          <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, color: COLORS.ink }}>
+          <div style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 700, color: COLORS.ink }}>
             {title}
           </div>
         </div>
-        <div style={{ fontSize: 13.5, color: COLORS.inkSoft, lineHeight: 1.6, marginBottom: 22, whiteSpace: "pre-wrap" }}>
+        <div style={{ fontSize: 14.5, color: COLORS.inkSoft, lineHeight: 1.6, marginBottom: 22, whiteSpace: "pre-wrap" }}>
           {message}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -1533,10 +1533,10 @@ function PasswordPromptModal({ label, stored, title, message, onCancel, onSucces
         <div style={{ width: 52, height: 52, borderRadius: "50%", background: COLORS.sageBg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
           <Lock size={22} color={COLORS.sage} />
         </div>
-        <div style={{ fontFamily: DISPLAY, fontSize: 17, fontWeight: 700, color: COLORS.ink, marginBottom: 6 }}>
+        <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, color: COLORS.ink, marginBottom: 6 }}>
           {title || "パスワードが必要です"}
         </div>
-        <div style={{ fontSize: 12.5, color: COLORS.inkSoft, marginBottom: 20, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13.5, color: COLORS.inkSoft, marginBottom: 20, lineHeight: 1.6 }}>
           {message || `「${label}」を開くにはパスワードを入力してください。`}
         </div>
         <input
@@ -1547,10 +1547,10 @@ function PasswordPromptModal({ label, stored, title, message, onCancel, onSucces
           autoFocus
           style={{
             width: "100%", padding: 12, borderRadius: 8, border: `1.5px solid ${COLORS.line}`,
-            fontFamily: MONO, fontSize: 16, textAlign: "center", letterSpacing: 4, color: COLORS.ink, marginBottom: 10,
+            fontFamily: MONO, fontSize: 17, textAlign: "center", letterSpacing: 4, color: COLORS.ink, marginBottom: 10,
           }}
         />
-        <div style={{ fontSize: 12, color: COLORS.brick, marginBottom: 14, minHeight: 16 }}>{error}</div>
+        <div style={{ fontSize: 13, color: COLORS.brick, marginBottom: 14, minHeight: 16 }}>{error}</div>
         <div style={{ display: "flex", gap: 8 }}>
           <TicketButton variant="ghost" onClick={onCancel} style={{ flex: 1 }}>キャンセル</TicketButton>
           <TicketButton variant="primary" onClick={handleConfirm} style={{ flex: 1 }}>開く</TicketButton>
@@ -1589,9 +1589,9 @@ function SecurityResetModal({ onCancel, onConfirm }) {
       <div style={{ background: COLORS.paper, borderRadius: 12, padding: 26, width: "100%", maxWidth: 360, boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <AlertCircle size={20} color={COLORS.brick} />
-          <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, color: COLORS.ink }}>パスワードをリセット</div>
+          <div style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 700, color: COLORS.ink }}>パスワードをリセット</div>
         </div>
-        <div style={{ fontSize: 13.5, color: COLORS.inkSoft, lineHeight: 1.6, marginBottom: 16 }}>
+        <div style={{ fontSize: 14.5, color: COLORS.inkSoft, lineHeight: 1.6, marginBottom: 16 }}>
           すべてのパスワード設定を解除します。リセット用のキーワードを入力してください。
         </div>
         <input
@@ -1600,9 +1600,9 @@ function SecurityResetModal({ onCancel, onConfirm }) {
           onChange={(e) => { setValue(e.target.value); setError(""); }}
           onKeyDown={(e) => { if (e.key === "Enter") handleConfirm(); }}
           autoFocus
-          style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 15, color: COLORS.ink, marginBottom: 8 }}
+          style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 16, color: COLORS.ink, marginBottom: 8 }}
         />
-        <div style={{ fontSize: 12, color: COLORS.brick, marginBottom: 16, minHeight: 16 }}>{error}</div>
+        <div style={{ fontSize: 13, color: COLORS.brick, marginBottom: 16, minHeight: 16 }}>{error}</div>
         <div style={{ display: "flex", gap: 10 }}>
           <TicketButton variant="ghost" onClick={onCancel} style={{ flex: 1 }}>キャンセル</TicketButton>
           <TicketButton variant="danger" onClick={handleConfirm} style={{ flex: 1, background: COLORS.brick, color: "#FBF9F4" }}>
@@ -1649,7 +1649,7 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
         title={companionLabel(seat.companion) ? `${seatDisplayLabel(seatNum, seatName)}　　${companionKindLabel(companionEffectiveKind(seat.companion, seat.companionKind))}：${companionLabel(seat.companion)}` : seatDisplayLabel(seatNum, seatName)}
         onBack={onBack}
         right={
-          <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: MONO, fontSize: 13 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: MONO, fontSize: 14 }}>
             <Users size={14} /> {seat.guests}名
             <Clock size={14} style={{ marginLeft: 4 }} /> {formatElapsed(seat.startTime, now)}
           </div>
@@ -1679,7 +1679,7 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
                   border: `1.5px solid ${activeCat === c ? COLORS.teal : COLORS.line}`,
                   background: activeCat === c ? COLORS.teal : "transparent",
                   color: activeCat === c ? "#FBF9F4" : COLORS.inkSoft,
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: 600,
                   whiteSpace: "nowrap",
                   cursor: "pointer",
@@ -1711,22 +1711,22 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
                       opacity: p.soldOut ? 0.55 : 1,
                     }}
                   >
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink, marginBottom: 6 }}>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: COLORS.ink, marginBottom: 6 }}>
                       {p.name}
                       {p.soldOut && <span style={{ fontFamily: MONO, fontWeight: 700 }}>(売り切れ)</span>}
                     </div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                      <span style={{ fontFamily: MONO, fontSize: 13, color: active ? COLORS.amber : COLORS.teal, fontWeight: 700 }}>
+                      <span style={{ fontFamily: MONO, fontSize: 14, color: active ? COLORS.amber : COLORS.teal, fontWeight: 700 }}>
                         {formatYen(effectivePrice)}
                       </span>
                       {active && (
-                        <span style={{ fontFamily: MONO, fontSize: 11, color: COLORS.inkSoft, textDecoration: "line-through" }}>
+                        <span style={{ fontFamily: MONO, fontSize: 12, color: COLORS.inkSoft, textDecoration: "line-through" }}>
                           {formatYen(p.price)}
                         </span>
                       )}
                     </div>
                     {p.timePrice && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, color: active ? COLORS.amber : COLORS.inkSoft, marginTop: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: active ? COLORS.amber : COLORS.inkSoft, marginTop: 4 }}>
                         <Clock size={10} /> {p.timePrice.start}〜{p.timePrice.end}
                       </div>
                     )}
@@ -1739,26 +1739,26 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
 
         {/* 注文リスト */}
         <div style={{ flex: isNarrow ? "none" : 1, display: "flex", flexDirection: "column", minWidth: isNarrow ? 0 : 260 }}>
-          <div style={{ padding: "12px 16px", fontSize: 12, fontFamily: MONO, color: COLORS.inkSoft, borderBottom: `1px solid ${COLORS.line}` }}>
+          <div style={{ padding: "12px 16px", fontSize: 13, fontFamily: MONO, color: COLORS.inkSoft, borderBottom: `1px solid ${COLORS.line}` }}>
             ORDER LIST
           </div>
           <div style={{ flex: isNarrow ? "none" : 1, overflowY: isNarrow ? "visible" : "auto", padding: "8px 16px" }}>
             {seat.orders.length === 0 && (
-              <div style={{ color: COLORS.inkSoft, fontSize: 13, padding: "20px 0", textAlign: "center" }}>
+              <div style={{ color: COLORS.inkSoft, fontSize: 14, padding: "20px 0", textAlign: "center" }}>
                 メニューから商品を選択してください
               </div>
             )}
             {seat.orders.map((o) => (
               <div key={o.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px dashed ${COLORS.line}` }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
-                  <div style={{ fontFamily: MONO, fontSize: 12, color: COLORS.inkSoft }}>{formatYen(o.price)} × {o.qty}</div>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, color: COLORS.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 13, color: COLORS.inkSoft }}>{formatYen(o.price)} × {o.qty}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button onClick={() => changeQty(o.id, -1)} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Minus size={13} />
                   </button>
-                  <span style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, minWidth: 18, textAlign: "center" }}>{o.qty}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, minWidth: 18, textAlign: "center" }}>{o.qty}</span>
                   <button onClick={() => changeQty(o.id, 1)} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Plus size={13} />
                   </button>
@@ -1768,10 +1768,10 @@ function OrderScreen({ seatNum, seatName, seat, products, now, onUpdateOrders, o
           </div>
           <div style={{ padding: 16, borderTop: `1px solid ${COLORS.line}`, background: COLORS.paper }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: 13, color: COLORS.inkSoft }}>小計</span>
-              <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.ink }}>{formatYen(total)}</span>
+              <span style={{ fontSize: 14, color: COLORS.inkSoft }}>小計</span>
+              <span style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: COLORS.ink }}>{formatYen(total)}</span>
             </div>
-            <div style={{ fontSize: 11, color: COLORS.inkSoft, marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 12 }}>
               ※サービス料・消費税は会計時に加算されます
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -1848,29 +1848,29 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
 
       <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
         <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
             <span>{seat.guests}名 ・ 滞在 {formatElapsed(seat.startTime, now)}</span>
           </div>
           {seat.orders.map((o) => (
-            <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13.5 }}>
+            <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 14.5 }}>
               <span style={{ color: COLORS.ink }}>{o.name} <span style={{ color: COLORS.inkSoft }}>× {o.qty}</span></span>
               <span style={{ fontFamily: MONO, color: COLORS.ink }}>{formatYen(o.price * o.qty)}</span>
             </div>
           ))}
 
           <div style={{ borderTop: `1px dashed ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
               <span>小計</span>
               <span style={{ fontFamily: MONO }}>{formatYen(subtotal)}</span>
             </div>
             {serviceRate > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
                 <span>サービス料（{formatPercent(serviceRate)}）</span>
                 <span style={{ fontFamily: MONO }}>{formatYen(serviceCharge)}</span>
               </div>
             )}
             {taxRate > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
                 <span>消費税（{formatPercent(taxRate)}）</span>
                 <span style={{ fontFamily: MONO }}>{formatYen(tax)}</span>
               </div>
@@ -1879,17 +1879,17 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
 
           <div style={{ borderTop: `1px solid ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontWeight: 700, color: COLORS.ink }}>合計</span>
-            <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
+            <span style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>お支払い方法</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>お支払い方法</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-            <TicketButton variant="subtle" onClick={() => setAll("cash")} style={{ fontSize: 12.5 }} icon={Banknote}>全額現金</TicketButton>
-            <TicketButton variant="subtle" onClick={() => setAll("card")} style={{ fontSize: 12.5 }} icon={CreditCard}>全額クレジット</TicketButton>
-            <TicketButton variant="subtle" onClick={() => setAll("paypay")} style={{ fontSize: 12.5 }} icon={Smartphone}>全額PayPay</TicketButton>
-            <TicketButton variant="subtle" onClick={() => setAll("onAccount")} style={{ fontSize: 12.5 }} icon={FileText}>全額売掛</TicketButton>
+            <TicketButton variant="subtle" onClick={() => setAll("cash")} style={{ fontSize: 13.5 }} icon={Banknote}>全額現金</TicketButton>
+            <TicketButton variant="subtle" onClick={() => setAll("card")} style={{ fontSize: 13.5 }} icon={CreditCard}>全額クレジット</TicketButton>
+            <TicketButton variant="subtle" onClick={() => setAll("paypay")} style={{ fontSize: 13.5 }} icon={Smartphone}>全額PayPay</TicketButton>
+            <TicketButton variant="subtle" onClick={() => setAll("onAccount")} style={{ fontSize: 13.5 }} icon={FileText}>全額売掛</TicketButton>
           </div>
 
           {[
@@ -1899,7 +1899,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
             { label: "売掛", icon: FileText, val: onAccount, set: setOnAccount },
           ].map((row) => (
             <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, width: 96, color: COLORS.inkSoft, fontSize: 13, flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, width: 96, color: COLORS.inkSoft, fontSize: 14, flexShrink: 0 }}>
                 <row.icon size={15} /> {row.label}
               </div>
               <span style={{ fontFamily: MONO, color: COLORS.inkSoft }}>¥</span>
@@ -1915,7 +1915,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
                   borderRadius: 6,
                   border: `1.5px solid ${COLORS.line}`,
                   fontFamily: MONO,
-                  fontSize: 15,
+                  fontSize: 16,
                   background: COLORS.paper,
                   color: COLORS.ink,
                 }}
@@ -1924,7 +1924,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
           ))}
 
           <div style={{ marginTop: 4, marginBottom: 4 }}>
-            <label style={{ fontSize: 12, color: COLORS.inkSoft }}>メモ(任意)</label>
+            <label style={{ fontSize: 13, color: COLORS.inkSoft }}>メモ(任意)</label>
             <textarea
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
@@ -1936,7 +1936,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
                 borderRadius: 6,
                 border: `1.5px solid ${COLORS.line}`,
                 marginTop: 4,
-                fontSize: 13.5,
+                fontSize: 14.5,
                 fontFamily: SANS,
                 background: COLORS.paper,
                 color: COLORS.ink,
@@ -1950,7 +1950,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
               display: "flex",
               justifyContent: "space-between",
               padding: "10px 4px",
-              fontSize: 13,
+              fontSize: 14,
               fontFamily: MONO,
               color: remaining === 0 ? COLORS.sage : COLORS.brick,
               fontWeight: 700,
@@ -1997,29 +1997,29 @@ function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPrevi
 
       <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
         <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
             <span>{seat.guests}名 ・ 滞在 {formatElapsed(seat.startTime, now)}</span>
           </div>
           {seat.orders.map((o) => (
-            <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13.5 }}>
+            <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 14.5 }}>
               <span style={{ color: COLORS.ink }}>{o.name} <span style={{ color: COLORS.inkSoft }}>× {o.qty}</span></span>
               <span style={{ fontFamily: MONO, color: COLORS.ink }}>{formatYen(o.price * o.qty)}</span>
             </div>
           ))}
 
           <div style={{ borderTop: `1px dashed ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
               <span>小計</span>
               <span style={{ fontFamily: MONO }}>{formatYen(subtotal)}</span>
             </div>
             {serviceRate > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
                 <span>サービス料（{formatPercent(serviceRate)}）</span>
                 <span style={{ fontFamily: MONO }}>{formatYen(serviceCharge)}</span>
               </div>
             )}
             {taxRate > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
                 <span>消費税（{formatPercent(taxRate)}）</span>
                 <span style={{ fontFamily: MONO }}>{formatYen(tax)}</span>
               </div>
@@ -2028,12 +2028,12 @@ function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPrevi
 
           <div style={{ borderTop: `1px solid ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontWeight: 700, color: COLORS.ink }}>合計</span>
-            <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
+            <span style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
           </div>
         </div>
 
         {alreadySubmitted && (
-          <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, fontSize: 13, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
+          <div style={{ background: COLORS.slateBg, border: `1.5px solid ${COLORS.slate}`, borderRadius: 10, padding: 14, fontSize: 14, color: COLORS.slate, fontWeight: 700, textAlign: "center" }}>
             会計待ちです。管理者が確定するまでお待ちください。
           </div>
         )}
@@ -2083,7 +2083,7 @@ function SeatNameInput({ initialValue, onSave }) {
         padding: "7px 10px",
         borderRadius: 6,
         border: `1.5px solid ${COLORS.line}`,
-        fontSize: 13,
+        fontSize: 14,
         background: COLORS.paper,
         color: COLORS.ink,
       }}
@@ -2099,7 +2099,7 @@ function securitySegmentStyle(active) {
     border: `1.5px solid ${active ? COLORS.teal : COLORS.line}`,
     background: active ? COLORS.teal : "transparent",
     color: active ? "#FBF9F4" : COLORS.inkSoft,
-    fontSize: 12.5,
+    fontSize: 13.5,
     fontWeight: 700,
     fontFamily: SANS,
     cursor: "pointer",
@@ -2113,7 +2113,7 @@ const securityInputStyle = {
   border: `1.5px solid ${COLORS.line}`,
   background: "#fff",
   fontFamily: MONO,
-  fontSize: 14,
+  fontSize: 15,
   color: COLORS.ink,
 };
 
@@ -2194,7 +2194,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
 
   return (
     <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20 }}>
-      <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
         選んだ画面を開く際に、パスワード入力を必須にできます。設定はこの端末上でのみ有効です。
       </div>
 
@@ -2207,8 +2207,8 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: "14px 16px", marginBottom: 10 }}
           >
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink }}>{SECURITY_SCREEN_LABELS[key]}</div>
-              {isProtected && <div style={{ fontSize: 11, color: COLORS.sage, marginTop: 2 }}>設定済み</div>}
+              <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>{SECURITY_SCREEN_LABELS[key]}</div>
+              {isProtected && <div style={{ fontSize: 12, color: COLORS.sage, marginTop: 2 }}>設定済み</div>}
             </div>
             {isProtected ? (
               <button
@@ -2216,7 +2216,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
                 style={{
                   padding: "8px 14px",
                   borderRadius: 20,
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   fontWeight: 700,
                   fontFamily: SANS,
                   cursor: "pointer",
@@ -2234,7 +2234,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
                 style={{
                   padding: "8px 14px",
                   borderRadius: 20,
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   fontWeight: 700,
                   fontFamily: SANS,
                   cursor: "pointer",
@@ -2253,7 +2253,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
 
       {anyActive && (
         <>
-          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, margin: "20px 0 10px" }}>ロックのタイミング</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, margin: "20px 0 10px" }}>ロックのタイミング</div>
           <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
             <button onClick={() => setLockMode("session")} style={securitySegmentStyle(lockMode === "session")}>
               アプリ起動中は初回のみ
@@ -2267,7 +2267,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
 
       {pendingKeys.length >= 2 && (
         <>
-          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>パスワードの設定方法</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>パスワードの設定方法</div>
           <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
             <button onClick={() => setMode("shared")} style={securitySegmentStyle(mode === "shared")}>共通のパスワードにする</button>
             <button onClick={() => setMode("individual")} style={securitySegmentStyle(mode === "individual")}>画面ごとに個別に設定する</button>
@@ -2277,7 +2277,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
 
       {pendingKeys.length > 0 && (pendingKeys.length === 1 || mode === "shared") && (
         <>
-          <div style={{ fontSize: 12, color: COLORS.inkSoft, fontWeight: 700, marginBottom: 6 }}>
+          <div style={{ fontSize: 13, color: COLORS.inkSoft, fontWeight: 700, marginBottom: 6 }}>
             {pendingKeys.length === 1 ? `${SECURITY_SCREEN_LABELS[pendingKeys[0]]}のパスワード` : "共通パスワード"}
           </div>
           <input
@@ -2287,7 +2287,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
             placeholder="4桁以上の数字など"
             style={securityInputStyle}
           />
-          <div style={{ fontSize: 12, color: COLORS.inkSoft, fontWeight: 700, margin: "12px 0 6px" }}>確認のためもう一度入力</div>
+          <div style={{ fontSize: 13, color: COLORS.inkSoft, fontWeight: 700, margin: "12px 0 6px" }}>確認のためもう一度入力</div>
           <input
             type="password"
             value={sharedPwConfirm}
@@ -2300,7 +2300,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
 
       {pendingKeys.length >= 2 && mode === "individual" && pendingKeys.map((key) => (
         <div key={key}>
-          <div style={{ fontSize: 12, color: COLORS.inkSoft, fontWeight: 700, margin: "12px 0 6px" }}>{SECURITY_SCREEN_LABELS[key]}のパスワード</div>
+          <div style={{ fontSize: 13, color: COLORS.inkSoft, fontWeight: 700, margin: "12px 0 6px" }}>{SECURITY_SCREEN_LABELS[key]}のパスワード</div>
           <input
             type="password"
             value={individualPw[key]}
@@ -2311,8 +2311,8 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
         </div>
       ))}
 
-      {error && <div style={{ fontSize: 12, color: COLORS.brick, marginTop: 12 }}>{error}</div>}
-      {saved && <div style={{ fontSize: 12, color: COLORS.sage, marginTop: 12 }}>{saved}</div>}
+      {error && <div style={{ fontSize: 13, color: COLORS.brick, marginTop: 12 }}>{error}</div>}
+      {saved && <div style={{ fontSize: 13, color: COLORS.sage, marginTop: 12 }}>{saved}</div>}
 
       <TicketButton variant="primary" onClick={handleSave} disabled={pendingKeys.length === 0} style={{ width: "100%", marginTop: 20 }}>
         保存
@@ -2320,8 +2320,8 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
 
       <div style={{ height: 1, background: COLORS.line, margin: "24px 0" }} />
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>パスワードを忘れた場合</div>
-      <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 10, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>パスワードを忘れた場合</div>
+      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 10, lineHeight: 1.6 }}>
         リセット用のキーワードを入力すると、すべてのパスワード設定を解除できます。
       </div>
       <TicketButton
@@ -2356,7 +2356,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
 function GuideSection({ title, children }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10, fontFamily: DISPLAY }}>{title}</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 10, fontFamily: DISPLAY }}>{title}</div>
       {children}
     </div>
   );
@@ -2365,8 +2365,8 @@ function GuideSection({ title, children }) {
 function GuideItem({ label, children }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.ink, marginBottom: 3 }}>・{label}</div>
-      <div style={{ fontSize: 12, color: COLORS.inkSoft, lineHeight: 1.7, paddingLeft: 14 }}>{children}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 700, color: COLORS.ink, marginBottom: 3 }}>・{label}</div>
+      <div style={{ fontSize: 13, color: COLORS.inkSoft, lineHeight: 1.7, paddingLeft: 14 }}>{children}</div>
     </div>
   );
 }
@@ -2387,12 +2387,12 @@ function UserGuidePanel() {
         }}
       >
         <AlertCircle size={16} color={COLORS.brick} style={{ flexShrink: 0, marginTop: 1 }} />
-        <div style={{ fontSize: 12.5, color: COLORS.brick, lineHeight: 1.7, fontWeight: 600 }}>
+        <div style={{ fontSize: 13.5, color: COLORS.brick, lineHeight: 1.7, fontWeight: 600 }}>
           ・このアプリを使用中はブラウザの「戻る」はクリックしないでください。
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 24, lineHeight: 1.7 }}>
+      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 24, lineHeight: 1.7 }}>
         このアプリの基本的な使い方をまとめています。商品・座席・設定・勤怠はSupabase経由で他の端末とも共有されていますが、売上履歴・入出金・パスワード設定はこの端末にのみ保存されています。機種変更や故障に備えて「データ管理」から定期的にバックアップを書き出してください。
       </div>
 
@@ -2469,13 +2469,13 @@ function UserGuidePanel() {
       </GuideSection>
 
       <GuideSection title="データの保存について">
-        <div style={{ fontSize: 12, color: COLORS.inkSoft, lineHeight: 1.7 }}>
+        <div style={{ fontSize: 13, color: COLORS.inkSoft, lineHeight: 1.7 }}>
           商品・座席・設定・勤怠・従業員マスタはSupabase(インターネット上のサーバー)に保存され、他の端末ともリアルタイムに共有されます。一方、売上履歴・入出金・パスワード設定はこの端末(ブラウザ)内にのみ保存され、Supabaseには保存されません。ブラウザのデータを消去したり端末が故障したりするとこれらのデータは失われるため、「データ管理」の「全データをJSONで書き出す」を定期的に行い、バックアップファイルを安全な場所に保管することをおすすめします。
         </div>
       </GuideSection>
 
       <GuideSection title="オフラインでの利用">
-        <div style={{ fontSize: 12, color: COLORS.inkSoft, lineHeight: 1.7 }}>
+        <div style={{ fontSize: 13, color: COLORS.inkSoft, lineHeight: 1.7 }}>
           一度開いた端末では、インターネットに接続していなくても引き続き利用できます(接続が切れると画面上部に「オフラインで動作中です」と表示されます)。ホーム画面にアプリを追加しておくと、通常のアプリのように起動できて便利です。
         </div>
       </GuideSection>
@@ -2890,7 +2890,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
               border: `1.5px solid ${tab === t.id ? COLORS.teal : COLORS.line}`,
               background: tab === t.id ? COLORS.teal : "transparent",
               color: tab === t.id ? "#FBF9F4" : COLORS.inkSoft,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 700,
               whiteSpace: "nowrap",
               flexShrink: 0,
@@ -2901,7 +2901,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
           </button>
         ))}
         <div style={{ marginLeft: "auto", flexShrink: 0, alignSelf: "center", display: "flex", alignItems: "center", gap: 10, paddingLeft: 12 }}>
-          <div style={{ fontSize: 11, fontFamily: MONO, color: COLORS.inkSoft, whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 12, fontFamily: MONO, color: COLORS.inkSoft, whiteSpace: "nowrap" }}>
             最終更新: {APP_LAST_UPDATED}
           </div>
           <button
@@ -2916,7 +2916,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
               border: `1.5px solid ${COLORS.line}`,
               background: "transparent",
               color: COLORS.inkSoft,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 700,
               whiteSpace: "nowrap",
               cursor: checkingUpdate ? "default" : "pointer",
@@ -2928,7 +2928,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
           </button>
           {myEmployee && (
             <>
-              <div style={{ fontSize: 11, fontFamily: MONO, color: COLORS.inkSoft, whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: COLORS.inkSoft, whiteSpace: "nowrap" }}>
                 {myEmployee.name}({myEmployee.role === "admin" ? "管理者" : "スタッフ"})
               </div>
               <button
@@ -2939,7 +2939,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                   border: `1.5px solid ${COLORS.line}`,
                   background: "transparent",
                   color: COLORS.inkSoft,
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 700,
                   whiteSpace: "nowrap",
                   cursor: "pointer",
@@ -2980,7 +2980,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                     border: `1.5px solid ${activeProductCat === "" ? COLORS.teal : COLORS.line}`,
                     background: activeProductCat === "" ? COLORS.teal : "transparent",
                     color: activeProductCat === "" ? "#FBF9F4" : COLORS.inkSoft,
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: 700,
                     whiteSpace: "nowrap",
                     cursor: "pointer",
@@ -2998,7 +2998,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                       border: `1.5px solid ${activeProductCat === c ? COLORS.teal : COLORS.line}`,
                       background: activeProductCat === c ? COLORS.teal : "transparent",
                       color: activeProductCat === c ? "#FBF9F4" : COLORS.inkSoft,
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: 700,
                       whiteSpace: "nowrap",
                       cursor: "pointer",
@@ -3025,16 +3025,16 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 >
                   <div style={{ opacity: p.soldOut ? 0.5 : 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>{p.name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.ink }}>{p.name}</div>
                       {p.soldOut && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.brick, border: `1px solid ${COLORS.brick}`, borderRadius: 4, padding: "1px 5px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.brick, border: `1px solid ${COLORS.brick}`, borderRadius: 4, padding: "1px 5px" }}>
                           売り切れ
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 12, color: COLORS.inkSoft, fontFamily: MONO }}>{p.category} ・ {formatYen(p.price)}</div>
+                    <div style={{ fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO }}>{p.category} ・ {formatYen(p.price)}</div>
                     {p.timePrice && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, color: COLORS.amber, fontFamily: MONO, marginTop: 3 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12.5, color: COLORS.amber, fontFamily: MONO, marginTop: 3 }}>
                         <Clock size={11} /> {p.timePrice.start}〜{p.timePrice.end} {formatYen(p.timePrice.price)}
                       </div>
                     )}
@@ -3097,9 +3097,9 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>座席 {n}</div>
+                          <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.ink }}>座席 {n}</div>
                           {occupied && (
-                            <div style={{ fontSize: 12, color: COLORS.brick, fontFamily: MONO }}>使用中</div>
+                            <div style={{ fontSize: 13, color: COLORS.brick, fontFamily: MONO }}>使用中</div>
                           )}
                         </div>
                         {isLast && (
@@ -3142,13 +3142,13 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 </div>
               )}
               <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20 }}>
-                <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>座席カードの色分け</div>
-                <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
+                <div style={{ fontSize: 14, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>座席カードの色分け</div>
+                <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
                   座席一覧で使用中の座席カードは、経過時間に応じて色が変わります。切り替わりまでの時間を分単位で設定してください。
                 </div>
 
                 <div style={{ marginBottom: 18 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
                     <Clock size={14} /> 黄色に変わるまでの時間
                   </div>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -3156,14 +3156,14 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                       type="number"
                       value={warnInput}
                       onChange={(e) => setWarnInput(e.target.value)}
-                      style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 16 }}
+                      style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 17 }}
                     />
                     <span style={{ fontFamily: MONO, color: COLORS.inkSoft }}>分</span>
                   </div>
                 </div>
 
                 <div style={{ marginBottom: 22 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
                     <Clock size={14} /> 赤色に変わるまでの時間
                   </div>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -3171,11 +3171,11 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                       type="number"
                       value={dangerInput}
                       onChange={(e) => setDangerInput(e.target.value)}
-                      style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 16 }}
+                      style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 17 }}
                     />
                     <span style={{ fontFamily: MONO, color: COLORS.inkSoft }}>分</span>
                   </div>
-                  <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 6 }}>
+                  <div style={{ fontSize: 12, color: COLORS.inkSoft, marginTop: 6 }}>
                     ※赤色の時間は黄色の時間より後に設定してください(短い場合は自動的に調整されます)
                   </div>
                 </div>
@@ -3188,13 +3188,13 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
 
         {tab === "rates" && (
           <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20 }}>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
               会計時に「小計 → サービス料 → 消費税」の順で自動計算されます。
               サービス料が不要な場合は0を設定してください。
             </div>
 
             <div style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
                 <Percent size={14} /> サービス料率
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -3202,14 +3202,14 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                   type="number"
                   value={serviceInput}
                   onChange={(e) => setServiceInput(e.target.value)}
-                  style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 16 }}
+                  style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 17 }}
                 />
                 <span style={{ fontFamily: MONO, color: COLORS.inkSoft }}>%</span>
               </div>
             </div>
 
             <div style={{ marginBottom: 22 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: COLORS.ink, fontWeight: 600, marginBottom: 8 }}>
                 <Percent size={14} /> 消費税率
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -3217,11 +3217,11 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                   type="number"
                   value={taxInput}
                   onChange={(e) => setTaxInput(e.target.value)}
-                  style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 16 }}
+                  style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontFamily: MONO, fontSize: 17 }}
                 />
                 <span style={{ fontFamily: MONO, color: COLORS.inkSoft }}>%</span>
               </div>
-              <div style={{ fontSize: 11, color: COLORS.inkSoft, marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginTop: 6 }}>
                 ※消費税はサービス料込みの金額に対して計算されます
               </div>
             </div>
@@ -3235,21 +3235,21 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
             <div style={{ flex: 1, minWidth: 0 }}>
               {pendingEmployees.length > 0 && (
                 <div style={{ background: COLORS.amberBg, border: `1.5px solid ${COLORS.amber}`, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>
                     承認待ちのアカウント({pendingEmployees.length}件)
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {pendingEmployees.map((e) => (
                       <div key={e.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, borderRadius: 8, padding: "8px 12px" }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink }}>
+                        <span style={{ fontSize: 14.5, fontWeight: 600, color: COLORS.ink }}>
                           {e.name}
                           {e.loginUsername && (
-                            <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.inkSoft, fontFamily: MONO }}>
+                            <span style={{ fontSize: 13, fontWeight: 400, color: COLORS.inkSoft, fontFamily: MONO }}>
                               （{e.loginUsername}）
                             </span>
                           )}
                         </span>
-                        <TicketButton variant="primary" onClick={() => approveEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
+                        <TicketButton variant="primary" onClick={() => approveEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 13.5 }}>
                           承認する
                         </TicketButton>
                       </div>
@@ -3267,17 +3267,17 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
               />
               {data.payroll.employees.some((e) => e.active === false) && (
                 <div style={{ marginTop: 20 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 8 }}>退職済み</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 8 }}>退職済み</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {data.payroll.employees.filter((e) => e.active === false).map((e) => (
                       <div key={e.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", opacity: 0.7 }}>
-                        <span style={{ fontSize: 13.5, color: COLORS.inkSoft }}>
+                        <span style={{ fontSize: 14.5, color: COLORS.inkSoft }}>
                           {e.name}
                           {e.loginUsername && (
-                            <span style={{ fontSize: 12, fontFamily: MONO }}>（{e.loginUsername}）</span>
+                            <span style={{ fontSize: 13, fontFamily: MONO }}>（{e.loginUsername}）</span>
                           )}
                         </span>
-                        <TicketButton variant="ghost" onClick={() => reactivateEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 12.5 }}>
+                        <TicketButton variant="ghost" onClick={() => reactivateEmployee(e.id)} style={{ padding: "6px 14px", fontSize: 13.5 }}>
                           復帰させる
                         </TicketButton>
                       </div>
@@ -3308,7 +3308,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
 
         {tab === "data" && (
           <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20 }}>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 20, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20, lineHeight: 1.6 }}>
               商品・座席・設定・勤怠はSupabase経由で他の端末(スタッフのスマホ等)とも共有されています。
               売上履歴・入出金・パスワード設定はこの端末にのみ保存されています。
               端末の故障やブラウザデータの消去に備えて、定期的にバックアップの書き出しをおすすめします。
@@ -3319,10 +3319,10 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
               const appDataBytes = rawData ? new Blob([rawData]).size : 0;
               return (
                 <div style={{ marginBottom: 24, padding: 14, background: COLORS.sageBg, borderRadius: 8 }}>
-                  <div style={{ fontSize: 12, color: COLORS.ink, fontWeight: 700, marginBottom: 10 }}>この端末での使用容量</div>
+                  <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 700, marginBottom: 10 }}>この端末での使用容量</div>
 
-                  <div style={{ fontSize: 11.5, color: COLORS.inkSoft, marginBottom: 4 }}>ブラウザでの使用量(全体)</div>
-                  <div style={{ fontSize: 14, fontFamily: MONO, color: COLORS.ink, fontWeight: 700 }}>
+                  <div style={{ fontSize: 12.5, color: COLORS.inkSoft, marginBottom: 4 }}>ブラウザでの使用量(全体)</div>
+                  <div style={{ fontSize: 15, fontFamily: MONO, color: COLORS.ink, fontWeight: 700 }}>
                     {formatBytes(storageEstimate.usage)} <span style={{ fontWeight: 400, color: COLORS.inkSoft }}>/ {formatBytes(storageEstimate.quota)}</span>
                   </div>
                   <div style={{ height: 6, background: COLORS.paper, borderRadius: 3, marginTop: 8, marginBottom: 12, overflow: "hidden" }}>
@@ -3344,18 +3344,18 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                       borderTop: `1px dashed ${COLORS.line}`,
                     }}
                   >
-                    <span style={{ fontSize: 11.5, color: COLORS.inkSoft }}>うちアプリデータ本体(商品・座席・売上等)</span>
-                    <span style={{ fontSize: 14, fontFamily: MONO, color: COLORS.ink, fontWeight: 700 }}>{formatBytes(appDataBytes)}</span>
+                    <span style={{ fontSize: 12.5, color: COLORS.inkSoft }}>うちアプリデータ本体(商品・座席・売上等)</span>
+                    <span style={{ fontSize: 15, fontFamily: MONO, color: COLORS.ink, fontWeight: 700 }}>{formatBytes(appDataBytes)}</span>
                   </div>
 
-                  <div style={{ fontSize: 10.5, color: COLORS.inkSoft, marginTop: 8, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 11.5, color: COLORS.inkSoft, marginTop: 8, lineHeight: 1.5 }}>
                     ※「ブラウザでの使用量」はReact本体等のオフラインキャッシュも含むこのアプリ全体の使用量、「アプリデータ本体」はバックアップに書き出される実データのみのサイズです。
                   </div>
 
                   {appDataBytes >= APP_DATA_DANGER_BYTES && (
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 12, padding: "8px 10px", background: COLORS.brickBg, borderRadius: 6 }}>
                       <AlertCircle size={14} color={COLORS.brick} style={{ flexShrink: 0, marginTop: 1 }} />
-                      <span style={{ fontSize: 11.5, color: COLORS.brick, fontWeight: 700, lineHeight: 1.5 }}>
+                      <span style={{ fontSize: 12.5, color: COLORS.brick, fontWeight: 700, lineHeight: 1.5 }}>
                         アプリデータの容量が多くなっています。バックアップを書き出したうえで、古い売上履歴・勤怠・入出金データの整理をおすすめします。
                       </span>
                     </div>
@@ -3363,7 +3363,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                   {appDataBytes >= APP_DATA_WARN_BYTES && appDataBytes < APP_DATA_DANGER_BYTES && (
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 12, padding: "8px 10px", background: COLORS.amberBg, borderRadius: 6 }}>
                       <AlertCircle size={14} color={COLORS.amber} style={{ flexShrink: 0, marginTop: 1 }} />
-                      <span style={{ fontSize: 11.5, color: COLORS.amber, fontWeight: 700, lineHeight: 1.5 }}>
+                      <span style={{ fontSize: 12.5, color: COLORS.amber, fontWeight: 700, lineHeight: 1.5 }}>
                         アプリデータの容量がやや多くなってきています。念のためバックアップの書き出しをおすすめします。
                       </span>
                     </div>
@@ -3373,8 +3373,8 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
             })()}
 
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>バックアップの書き出し</div>
-              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 10 }}>
+              <div style={{ fontSize: 14, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>バックアップの書き出し</div>
+              <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 10 }}>
                 商品・座席・売上履歴・設定をすべて含むJSONファイルをダウンロードします。
               </div>
               <TicketButton variant="primary" onClick={() => setPendingExport(true)} style={{ width: "100%" }}>
@@ -3385,8 +3385,8 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
             <div style={{ height: 1, background: COLORS.line, margin: "20px 0" }} />
 
             <div>
-              <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>バックアップの復元</div>
-              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 10, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, color: COLORS.ink, fontWeight: 700, marginBottom: 8 }}>バックアップの復元</div>
+              <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 10, lineHeight: 1.6 }}>
                 「全件復元」は現在のすべてのデータを削除し、選択したファイルの内容にまるごと置き換えます。
                 「期間指定」も商品・座席・設定などのマスタは選択したファイルの内容に置き換わりますが、売上履歴・勤怠・入出金だけは直近の期間(1・3・6ヶ月)分のみを復元します(容量を空けたいときにおすすめです)。
                 いずれも商品・座席・設定・勤怠はSupabase経由で他の端末にも即座に反映されます(売上履歴・入出金はこの端末のみ)。取り消せません。
@@ -3415,21 +3415,21 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
                 <TicketButton variant="ghost" onClick={() => setPendingRestorePassword(true)} style={{ padding: "8px 16px" }}>
                   ファイルを選択
                 </TicketButton>
-                <span style={{ fontSize: 12.5, color: COLORS.inkSoft }}>{restoreFileName || "選択されていません"}</span>
+                <span style={{ fontSize: 13.5, color: COLORS.inkSoft }}>{restoreFileName || "選択されていません"}</span>
               </div>
               {importError && (
-                <div style={{ fontSize: 12, color: COLORS.brick, marginTop: 8 }}>{importError}</div>
+                <div style={{ fontSize: 13, color: COLORS.brick, marginTop: 8 }}>{importError}</div>
               )}
               {importOk && (
-                <div style={{ fontSize: 12, color: COLORS.sage, marginTop: 8 }}>{importOk}</div>
+                <div style={{ fontSize: 13, color: COLORS.sage, marginTop: 8 }}>{importOk}</div>
               )}
             </div>
 
             <div style={{ height: 1, background: COLORS.line, margin: "20px 0" }} />
 
             <div>
-              <div style={{ fontSize: 13, color: COLORS.brick, fontWeight: 700, marginBottom: 8 }}>全データ削除</div>
-              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 10, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, color: COLORS.brick, fontWeight: 700, marginBottom: 8 }}>全データ削除</div>
+              <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 10, lineHeight: 1.6 }}>
                 商品・座席・売上履歴・設定などすべてのデータを削除し、初期状態に戻します。商品・座席・設定・勤怠はSupabase経由で他の端末(スタッフのスマホ等)にも即座に反映されます。この操作は取り消せません。事前にバックアップの書き出しをおすすめします。
               </div>
               <TicketButton variant="danger" onClick={() => setPendingDeleteAllPassword(true)} style={{ width: "100%", background: COLORS.brick, color: "#FBF9F4" }}>
@@ -3636,47 +3636,47 @@ function ProductEditModal({ product, categories, onCancel, onSave }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20, overflowY: "auto" }}>
       <div style={{ background: COLORS.paper, borderRadius: 12, padding: 24, width: "100%", maxWidth: 380, boxShadow: "0 12px 40px rgba(0,0,0,0.25)", margin: "20px 0" }}>
-        <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, marginBottom: 18, color: COLORS.ink }}>
+        <div style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 700, marginBottom: 18, color: COLORS.ink }}>
           {product.id ? "商品を編集" : "商品を追加"}
         </div>
 
-        <label style={{ fontSize: 12, color: COLORS.inkSoft }}>カテゴリ</label>
+        <label style={{ fontSize: 13, color: COLORS.inkSoft }}>カテゴリ</label>
         {!customCat ? (
           <div style={{ display: "flex", gap: 6, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                style={{ padding: "6px 12px", borderRadius: 16, border: `1.5px solid ${category === c ? COLORS.teal : COLORS.line}`, background: category === c ? COLORS.teal : "transparent", color: category === c ? "#FBF9F4" : COLORS.ink, fontSize: 12.5, cursor: "pointer" }}
+                style={{ padding: "6px 12px", borderRadius: 16, border: `1.5px solid ${category === c ? COLORS.teal : COLORS.line}`, background: category === c ? COLORS.teal : "transparent", color: category === c ? "#FBF9F4" : COLORS.ink, fontSize: 13.5, cursor: "pointer" }}
               >
                 {c}
               </button>
             ))}
-            <button onClick={() => { setCustomCat(true); setCategory(""); }} style={{ padding: "6px 12px", borderRadius: 16, border: `1.5px dashed ${COLORS.line}`, background: "transparent", color: COLORS.inkSoft, fontSize: 12.5, cursor: "pointer" }}>
+            <button onClick={() => { setCustomCat(true); setCategory(""); }} style={{ padding: "6px 12px", borderRadius: 16, border: `1.5px dashed ${COLORS.line}`, background: "transparent", color: COLORS.inkSoft, fontSize: 13.5, cursor: "pointer" }}>
               + 新規
             </button>
           </div>
         ) : (
-          <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="新しいカテゴリ名" style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 4, marginBottom: 14, fontSize: 14 }} />
+          <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="新しいカテゴリ名" style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 4, marginBottom: 14, fontSize: 15 }} />
         )}
 
         {isBottleCategory && (
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: -6, marginBottom: 14 }}>
             <input type="checkbox" checked={bottleBack} onChange={(e) => setBottleBack(e.target.checked)} style={{ width: 16, height: 16 }} />
-            <span style={{ fontSize: 13, color: COLORS.ink }}>ボトルバック</span>
+            <span style={{ fontSize: 14, color: COLORS.ink }}>ボトルバック</span>
           </label>
         )}
 
-        <label style={{ fontSize: 12, color: COLORS.inkSoft }}>商品名</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 4, marginBottom: 14, fontSize: 14 }} />
+        <label style={{ fontSize: 13, color: COLORS.inkSoft }}>商品名</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 4, marginBottom: 14, fontSize: 15 }} />
 
-        <label style={{ fontSize: 12, color: COLORS.inkSoft }}>通常価格</label>
-        <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 4, marginBottom: 14, fontFamily: MONO, fontSize: 14 }} />
+        <label style={{ fontSize: 13, color: COLORS.inkSoft }}>通常価格</label>
+        <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 4, marginBottom: 14, fontFamily: MONO, fontSize: 15 }} />
 
         <div style={{ borderTop: `1px dashed ${COLORS.line}`, marginTop: 4, paddingTop: 14, marginBottom: 4 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <input type="checkbox" checked={tpEnabled} onChange={(e) => setTpEnabled(e.target.checked)} style={{ width: 16, height: 16 }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, display: "flex", alignItems: "center", gap: 5 }}>
               <Clock size={14} /> 時間帯価格を設定する
             </span>
           </label>
@@ -3685,18 +3685,18 @@ function ProductEditModal({ product, categories, onCancel, onSave }) {
             <div style={{ marginTop: 12, paddingLeft: 2 }}>
               <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: 11, color: COLORS.inkSoft }}>開始</label>
-                  <input type="time" value={tpStart} onChange={(e) => setTpStart(e.target.value)} style={{ width: "100%", padding: "8px 8px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 3, fontFamily: MONO, fontSize: 13 }} />
+                  <label style={{ fontSize: 12, color: COLORS.inkSoft }}>開始</label>
+                  <input type="time" value={tpStart} onChange={(e) => setTpStart(e.target.value)} style={{ width: "100%", padding: "8px 8px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 3, fontFamily: MONO, fontSize: 14 }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: 11, color: COLORS.inkSoft }}>終了</label>
-                  <input type="time" value={tpEnd} onChange={(e) => setTpEnd(e.target.value)} style={{ width: "100%", padding: "8px 8px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 3, fontFamily: MONO, fontSize: 13 }} />
+                  <label style={{ fontSize: 12, color: COLORS.inkSoft }}>終了</label>
+                  <input type="time" value={tpEnd} onChange={(e) => setTpEnd(e.target.value)} style={{ width: "100%", padding: "8px 8px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 3, fontFamily: MONO, fontSize: 14 }} />
                 </div>
               </div>
-              <label style={{ fontSize: 11, color: COLORS.inkSoft }}>時間帯価格</label>
-              <input type="number" value={tpPrice} onChange={(e) => setTpPrice(e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 3, marginBottom: 8, fontFamily: MONO, fontSize: 14 }} />
+              <label style={{ fontSize: 12, color: COLORS.inkSoft }}>時間帯価格</label>
+              <input type="number" value={tpPrice} onChange={(e) => setTpPrice(e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, marginTop: 3, marginBottom: 8, fontFamily: MONO, fontSize: 15 }} />
               {tpStart > tpEnd && (
-                <div style={{ fontSize: 11, color: COLORS.inkSoft }}>
+                <div style={{ fontSize: 12, color: COLORS.inkSoft }}>
                   日をまたぐ時間帯として扱われます（{tpStart}〜翌{tpEnd}）
                 </div>
               )}
@@ -3724,31 +3724,31 @@ function SaleSummaryCard({ sale }) {
   return (
     <>
       <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 18 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14, color: COLORS.inkSoft, fontFamily: MONO, marginBottom: 10 }}>
           <span>{sale.guests}名</span>
           <span>入店 {formatDateTimeShort(sale.startTime)} 〜 会計 {formatDateTimeShort(sale.endTime)}</span>
         </div>
 
         {sale.orders.map((o) => (
-          <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13.5 }}>
+          <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 14.5 }}>
             <span style={{ color: COLORS.ink }}>{o.name} <span style={{ color: COLORS.inkSoft }}>× {o.qty}</span></span>
             <span style={{ fontFamily: MONO, color: COLORS.ink }}>{formatYen(o.price * o.qty)}</span>
           </div>
         ))}
 
         <div style={{ borderTop: `1px dashed ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
             <span>小計</span>
             <span style={{ fontFamily: MONO }}>{formatYen(sale.subtotal ?? sale.total)}</span>
           </div>
           {(sale.serviceCharge ?? 0) > 0 && (
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
               <span>サービス料（{formatPercent(sale.serviceRate)}）</span>
               <span style={{ fontFamily: MONO }}>{formatYen(sale.serviceCharge)}</span>
             </div>
           )}
           {(sale.tax ?? 0) > 0 && (
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: COLORS.inkSoft }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.inkSoft }}>
               <span>消費税（{formatPercent(sale.taxRate)}）</span>
               <span style={{ fontFamily: MONO }}>{formatYen(sale.tax)}</span>
             </div>
@@ -3757,12 +3757,12 @@ function SaleSummaryCard({ sale }) {
 
         <div style={{ borderTop: `1px solid ${COLORS.line}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
           <span style={{ fontWeight: 700, color: COLORS.ink }}>合計</span>
-          <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: COLORS.teal }}>{formatYen(sale.total)}</span>
+          <span style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: COLORS.teal }}>{formatYen(sale.total)}</span>
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>お支払い内訳</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>お支払い内訳</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {[
             { label: "現金", icon: Banknote, key: "cash" },
@@ -3771,22 +3771,22 @@ function SaleSummaryCard({ sale }) {
             { label: "売掛", icon: FileText, key: "onAccount" },
           ].filter((row) => (sale.payments?.[row.key] ?? 0) > 0).map((row) => (
             <div key={row.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.inkSoft, fontSize: 13 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.inkSoft, fontSize: 14 }}>
                 <row.icon size={15} /> {row.label}
               </div>
               <span style={{ fontFamily: MONO, fontWeight: 700, color: COLORS.ink }}>{formatYen(sale.payments[row.key])}</span>
             </div>
           ))}
           {(!sale.payments || Object.values(sale.payments).every((v) => !v)) && (
-            <div style={{ fontSize: 12.5, color: COLORS.inkSoft }}>支払い情報がありません</div>
+            <div style={{ fontSize: 13.5, color: COLORS.inkSoft }}>支払い情報がありません</div>
           )}
         </div>
       </div>
 
       {sale.memo && (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>メモ</div>
-          <div style={{ background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.ink, whiteSpace: "pre-wrap" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink, marginBottom: 10 }}>メモ</div>
+          <div style={{ background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 14, color: COLORS.ink, whiteSpace: "pre-wrap" }}>
             {sale.memo}
           </div>
         </div>
@@ -3813,7 +3813,7 @@ function HistoryDetailScreen({ sale, onBack, onEdit, onToggleVoid }) {
 
       <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, maxWidth: 480, margin: "0 auto", width: "100%" }}>
         {sale.voided && (
-          <div style={{ background: COLORS.brickBg, border: `1.5px solid ${COLORS.brick}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.brick, fontWeight: 700 }}>
+          <div style={{ background: COLORS.brickBg, border: `1.5px solid ${COLORS.brick}`, borderRadius: 8, padding: "10px 14px", fontSize: 14, color: COLORS.brick, fontWeight: 700 }}>
             この会計は取消済みです。件数・金額の集計、CSV、売上バックの対象から除外されています(データ自体は削除されていません)。
           </div>
         )}
@@ -3896,8 +3896,8 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
   if (signedUp) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>登録リクエストを送信しました</div>
-        <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20 }}>
+        <div style={{ fontSize: 17, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>登録リクエストを送信しました</div>
+        <div style={{ fontSize: 14, color: COLORS.inkSoft, marginBottom: 20 }}>
           管理者が承認するまでお待ちください。承認後、同じユーザー名・パスワードでログインできます。
         </div>
         <TicketButton variant="ghost" onClick={() => { setSignedUp(false); setMode("login"); setPassword(""); }}>
@@ -3910,8 +3910,8 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center", padding: 24, fontFamily: SANS }}>
       <div style={{ maxWidth: 340, margin: "0 auto", width: "100%" }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.ink, textAlign: "center", marginBottom: 4 }}>店舗POS</div>
-        <div style={{ fontSize: 13, color: COLORS.inkSoft, textAlign: "center", marginBottom: 24 }}>
+        <div style={{ fontSize: 21, fontWeight: 700, color: COLORS.ink, textAlign: "center", marginBottom: 4 }}>店舗POS</div>
+        <div style={{ fontSize: 14, color: COLORS.inkSoft, textAlign: "center", marginBottom: 24 }}>
           {mode === "login" ? "ログイン" : "新規登録"}
         </div>
 
@@ -3927,7 +3927,7 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
                 border: `1.5px solid ${mode === t.id ? COLORS.teal : COLORS.line}`,
                 background: mode === t.id ? COLORS.teal : "transparent",
                 color: mode === t.id ? "#FBF9F4" : COLORS.inkSoft,
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 700,
                 cursor: "pointer",
               }}
@@ -3939,37 +3939,37 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>{mode === "signup" ? "ユーザー名（ログイン用）" : "ユーザー名"}</div>
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 4 }}>{mode === "signup" ? "ユーザー名（ログイン用）" : "ユーザー名"}</div>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoCapitalize="off"
               autoCorrect="off"
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }}
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 16 }}
             />
           </div>
           {mode === "signup" && (
             <div>
-              <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>お名前(表示名)</div>
+              <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 4 }}>お名前(表示名)</div>
               <input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 16 }}
               />
             </div>
           )}
           <div>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>パスワード(6文字以上)</div>
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 4 }}>パスワード(6文字以上)</div>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }}
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 16 }}
             />
           </div>
 
           {error && (
-            <div style={{ fontSize: 12.5, color: COLORS.brick, background: COLORS.brickBg, borderRadius: 6, padding: "8px 10px" }}>
+            <div style={{ fontSize: 13.5, color: COLORS.brick, background: COLORS.brickBg, borderRadius: 6, padding: "8px 10px" }}>
               {error}
             </div>
           )}
@@ -3982,7 +3982,7 @@ function LoginScreen({ onLoggedIn, onSignupStart }) {
             href="./guide.html"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ display: "block", textAlign: "center", marginTop: 28, fontSize: 12.5, color: COLORS.inkSoft, textDecoration: "underline" }}
+            style={{ display: "block", textAlign: "center", marginTop: 28, fontSize: 13.5, color: COLORS.inkSoft, textDecoration: "underline" }}
           >
             使い方ガイドを見る
           </a>
@@ -3996,8 +3996,8 @@ function PendingApprovalScreen({ employee, onLogout }) {
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>承認待ちです</div>
-      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20 }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>承認待ちです</div>
+      <div style={{ fontSize: 14, color: COLORS.inkSoft, marginBottom: 20 }}>
         {employee?.name ? `${employee.name}さんのアカウントは、` : "アカウントは、"}
         管理者の承認をお待ちしています。承認されるまでこの画面が表示されます。
       </div>
@@ -4013,8 +4013,8 @@ function DeactivatedScreen({ employee, onLogout }) {
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>ログインできません</div>
-      <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 20 }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: COLORS.ink, marginBottom: 8 }}>ログインできません</div>
+      <div style={{ fontSize: 14, color: COLORS.inkSoft, marginBottom: 20 }}>
         {employee?.name ? `${employee.name}さんのアカウントは、` : "このアカウントは、"}
         退職済みとして無効化されています。心当たりが無い場合は管理者にお問い合わせください。
       </div>
@@ -4054,20 +4054,20 @@ function PasswordChangeModal({ onClose, showToast }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 }}>
       <div style={{ background: COLORS.paper, borderRadius: 12, padding: 26, width: "100%", maxWidth: 340, boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
-        <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, color: COLORS.ink, marginBottom: 18 }}>
+        <div style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 700, color: COLORS.ink, marginBottom: 18 }}>
           パスワードを変更
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>新しいパスワード(6文字以上)</div>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }} />
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 4 }}>新しいパスワード(6文字以上)</div>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 16 }} />
           </div>
           <div>
-            <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 4 }}>新しいパスワード(確認)</div>
-            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 15 }} />
+            <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 4 }}>新しいパスワード(確認)</div>
+            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1.5px solid ${COLORS.line}`, fontSize: 16 }} />
           </div>
           {error && (
-            <div style={{ fontSize: 12.5, color: COLORS.brick, background: COLORS.brickBg, borderRadius: 6, padding: "8px 10px" }}>{error}</div>
+            <div style={{ fontSize: 13.5, color: COLORS.brick, background: COLORS.brickBg, borderRadius: 6, padding: "8px 10px" }}>{error}</div>
           )}
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
             <TicketButton variant="ghost" onClick={onClose} style={{ flex: 1 }}>キャンセル</TicketButton>
@@ -4597,7 +4597,7 @@ function App() {
     if (myEmployeeTimedOut) {
       return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", fontFamily: SANS, gap: 16 }}>
-          <div style={{ fontSize: 14, color: COLORS.inkSoft }}>
+          <div style={{ fontSize: 15, color: COLORS.inkSoft }}>
             読み込みに時間がかかっています。通信状況をご確認のうえ、再読み込みしてください。
           </div>
           <TicketButton variant="primary" onClick={() => window.location.reload()}>再読み込み</TicketButton>
@@ -4943,7 +4943,7 @@ function App() {
           return (
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <Header title="会計明細" onBack={() => { setSelectedSaleId(null); setScreen("salesManagement"); }} />
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.inkSoft, fontSize: 13 }}>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.inkSoft, fontSize: 14 }}>
                 データが見つかりませんでした
               </div>
             </div>
@@ -4989,7 +4989,7 @@ function App() {
       <Toast message={toast} />
 
       {saveError && (
-        <div style={{ position: "fixed", top: 10, left: "50%", transform: "translateX(-50%)", background: COLORS.brick, color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 12.5, zIndex: 300 }}>
+        <div style={{ position: "fixed", top: 10, left: "50%", transform: "translateX(-50%)", background: COLORS.brick, color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 13.5, zIndex: 300 }}>
           保存に失敗しました。通信状況をご確認ください。
         </div>
       )}
