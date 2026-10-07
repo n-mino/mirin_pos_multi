@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/09/24 18:57";
+const APP_LAST_UPDATED = "2026/10/07 17:29";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -243,10 +243,10 @@ function defaultData() {
     },
     cashFlow: { records: {} }, // 日付(YYYY-MM-DD) -> { expenses:[], income:[] }
     security: {
-      enabled: { salesManagement: false, payroll: false },
+      enabled: { salesManagement: false, payroll: false, staffMaster: false },
       mode: "shared", // "shared" | "individual"(2画面以上選択時のみ意味を持つ)
       lockMode: "session", // "session"(起動中は初回のみ) | "always"(タブを開くたび)
-      passwords: { salesManagement: "", payroll: "" }, // PASSWORD_PREFIXを付与して保存
+      passwords: { salesManagement: "", payroll: "", staffMaster: "" }, // PASSWORD_PREFIXを付与して保存
     },
   };
 }
@@ -264,8 +264,9 @@ function verifyPassword(enteredRaw, storedEncoded) {
   return !!storedEncoded && encodePassword(enteredRaw) === storedEncoded;
 }
 
-const SECURITY_SCREEN_ORDER = ["salesManagement", "payroll"];
-const SECURITY_SCREEN_LABELS = { salesManagement: "売上管理", payroll: "勤怠管理" };
+const SECURITY_SCREEN_ORDER = ["salesManagement", "payroll", "staffMaster"];
+const SECURITY_SCREEN_LABELS = { salesManagement: "売上管理", payroll: "勤怠管理", staffMaster: "従業員マスタ" };
+const emptySecurityMap = (fill) => Object.fromEntries(SECURITY_SCREEN_ORDER.map((k) => [k, fill]));
 const SECURITY_RESET_KEYWORD = "09044249596";
 const SETTINGS_ADMIN_PASSWORD = "mrn"; // 「パスワード設定」タブ・JSON書き出しを保護する固定パスワード
 
@@ -2254,7 +2255,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
   const [lockMode, setLockMode] = useState(security.lockMode || "session");
   const [sharedPw, setSharedPw] = useState("");
   const [sharedPwConfirm, setSharedPwConfirm] = useState("");
-  const [individualPw, setIndividualPw] = useState({ salesManagement: "", payroll: "" });
+  const [individualPw, setIndividualPw] = useState(emptySecurityMap(""));
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
@@ -2292,7 +2293,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
     setPendingEnable({});
     setSharedPw("");
     setSharedPwConfirm("");
-    setIndividualPw({ salesManagement: "", payroll: "" });
+    setIndividualPw(emptySecurityMap(""));
     setSaved("保存しました");
   };
 
@@ -2313,7 +2314,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
     setPendingEnable({});
     setSharedPw("");
     setSharedPwConfirm("");
-    setIndividualPw({ salesManagement: "", payroll: "" });
+    setIndividualPw(emptySecurityMap(""));
     setError("");
     setSaved("パスワードをリセットしました");
     setShowResetModal(false);
@@ -2323,7 +2324,7 @@ function PasswordSettingsPanel({ security, onUpdateSecurity, onResetSecurity }) 
   return (
     <div style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.line}`, borderRadius: 10, padding: 20 }}>
       <div style={{ fontSize: 13, color: COLORS.inkSoft, marginBottom: 18, lineHeight: 1.6 }}>
-        選んだ画面を開く際に、パスワード入力を必須にできます。設定はこの端末上でのみ有効です。
+        選んだ画面(売上管理・勤怠管理)やマスタ設定の「従業員マスタ」を開く際に、パスワード入力を必須にできます。設定はこの端末上でのみ有効です。
       </div>
 
       {SECURITY_SCREEN_ORDER.map((key) => {
@@ -2583,7 +2584,7 @@ function UserGuidePanel() {
           左側で従業員の氏名・時給を登録・編集・削除します。右側の「ランク別時給アップ額」では、勤怠入力の「呼込み/同伴/その他」を選んだ際に時給へ加算する金額(1時間あたり)を、全従業員共通で設定できます。その下の「売上バックの率」(小計30,000円超/5人以上+小計50,000円超の2条件と、円未満の端数処理)は、会計確定時に自動計算される「売上バック」に使われます(「ボトル関連」は条件未定のため入力欄のみで、計算には使われません)。
         </GuideItem>
         <GuideItem label="パスワード設定">
-          売上管理・勤怠管理の2画面それぞれにパスワードを設定できます(売上履歴は売上管理内のタブのため、売上管理のパスワードが適用されます)。両方に設定する場合は「共通のパスワード」か「画面ごとに個別」かを選べます。「ロックのタイミング」では、アプリ起動中は初回のみ確認するか、画面を開くたび毎回確認するかを選べます。パスワードを忘れた場合は、この画面下部の「パスワードをリセット」から専用のキーワードを入力するとすべての設定を解除できます。このリセット用キーワード、および「パスワード設定」タブ自体を開くためのパスワードは、アプリ制作者に確認してください。
+          売上管理・勤怠管理の2画面と、マスタ設定内の「従業員マスタ」タブそれぞれにパスワードを設定できます(売上履歴は売上管理内のタブのため、売上管理のパスワードが適用されます)。複数に設定する場合は「共通のパスワード」か「画面ごとに個別」かを選べます。「ロックのタイミング」では、アプリ起動中は初回のみ確認するか、画面を開くたび毎回確認するかを選べます。パスワードを忘れた場合は、この画面下部の「パスワードをリセット」から専用のキーワードを入力するとすべての設定を解除できます。このリセット用キーワード、および「パスワード設定」タブ自体を開くためのパスワードは、アプリ制作者に確認してください。
         </GuideItem>
         <GuideItem label="データ管理">
           この端末での使用容量の確認、全データのJSONファイルへの書き出し(バックアップ)、書き出したJSONファイルからの復元、全データの削除ができます。書き出し・復元・削除はいずれもパスワードで保護されています(パスワードはアプリ制作者に確認してください)。アプリデータの容量が目安を超えると、この画面に注意・警告の表示が出ます。特に「全データ削除」は商品・座席・設定・勤怠を初期状態に戻す取り消せない操作で、これらはSupabase経由で他の端末(スタッフのスマホ等)にも即座に反映されるため、実行前に必ずバックアップを書き出し、他端末が使用中でないタイミングを選んで実行してください。
@@ -2614,7 +2615,7 @@ function UserGuidePanel() {
 /* ---------------------------------------------------------
    マスタ設定画面
 --------------------------------------------------------- */
-function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onUpdateSeatName, onUpdateRates, onUpdateSeatToneThresholds, onUpdatePayroll, onImportData, onImportDataPeriod, onDeleteAllData, onUpdateSecurity, onResetSecurity, showToast, myEmployee, onLogout }) {
+function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onUpdateSeatName, onUpdateRates, onUpdateSeatToneThresholds, onUpdatePayroll, onImportData, onImportDataPeriod, onDeleteAllData, onUpdateSecurity, onResetSecurity, showToast, myEmployee, onLogout, unlockedTabs, onUnlockTab }) {
   const isNarrow = useMediaQuery("(max-width: 720px)");
   const [tab, setTab] = useState("products");
   const [confirmingLogout, setConfirmingLogout] = useState(false);
@@ -2632,6 +2633,7 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
   const [storageEstimate, setStorageEstimate] = useState(null);
   const [passwordTabUnlocked, setPasswordTabUnlocked] = useState(false);
   const [pendingPasswordTab, setPendingPasswordTab] = useState(false);
+  const [pendingStaffTab, setPendingStaffTab] = useState(false);
   const [pendingExport, setPendingExport] = useState(false);
   const [pendingDeleteAllPassword, setPendingDeleteAllPassword] = useState(false);
   const [pendingDeleteAllConfirm, setPendingDeleteAllConfirm] = useState(false);
@@ -2652,6 +2654,14 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
     if (id === "password" && !passwordTabUnlocked) {
       setPendingPasswordTab(true);
       return;
+    }
+    // 従業員マスタは、パスワード設定で保護されている場合のみ確認する(表示中のタブの再タップでは再確認しない)
+    if (id === "staff" && tab !== "staff" && data.security.enabled.staffMaster) {
+      const needsCheck = data.security.lockMode === "always" || !unlockedTabs.has("staffMaster");
+      if (needsCheck) {
+        setPendingStaffTab(true);
+        return;
+      }
     }
     setTab(id);
   };
@@ -3585,6 +3595,15 @@ function SettingsScreen({ data, onBack, onUpdateProducts, onUpdateSeatCount, onU
           stored={encodePassword(SETTINGS_ADMIN_PASSWORD)}
           onCancel={() => setPendingPasswordTab(false)}
           onSuccess={() => { setPasswordTabUnlocked(true); setPendingPasswordTab(false); setTab("password"); }}
+        />
+      )}
+
+      {pendingStaffTab && (
+        <PasswordPromptModal
+          label={SECURITY_SCREEN_LABELS.staffMaster}
+          stored={data.security.passwords.staffMaster}
+          onCancel={() => setPendingStaffTab(false)}
+          onSuccess={() => { onUnlockTab("staffMaster"); setPendingStaffTab(false); setTab("staff"); }}
         />
       )}
 
@@ -4787,8 +4806,8 @@ function App() {
       ...dataRef.current,
       security: {
         ...dataRef.current.security,
-        enabled: { salesManagement: false, payroll: false },
-        passwords: { salesManagement: "", payroll: "" },
+        enabled: emptySecurityMap(false),
+        passwords: emptySecurityMap(""),
       },
     });
     setUnlockedTabs(new Set());
@@ -5061,6 +5080,8 @@ function App() {
           showToast={showToast}
           myEmployee={myEmployee}
           onLogout={handleLogout}
+          unlockedTabs={unlockedTabs}
+          onUnlockTab={(key) => setUnlockedTabs((prev) => new Set(prev).add(key))}
         />
       )}
 
