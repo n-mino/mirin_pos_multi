@@ -91,6 +91,16 @@ function payrollShiftTotal(shift, employees, rankBonusRates) {
   return { hours, total: base + back, wage };
 }
 
+// 同伴バックと売上バックの両方に値がある場合に、どちらを採用したか(大きい方。同額は同伴バック)を
+// 勤怠一覧のメモ欄先頭へ表示するための文言。表示専用でshift.note自体は書き換えない
+// (編集画面のメモ欄に二重に入らないようにするため)。
+function payrollShiftMemo(shift) {
+  const hasBoth = (shift.option || 0) > 0 && (shift.option2 || 0) > 0;
+  const label = hasBoth ? ((shift.option2 || 0) > (shift.option || 0) ? "売上バック採用" : "同伴バック採用") : "";
+  const note = shift.note || "";
+  return label ? (note ? `${label} ${note}` : label) : note;
+}
+
 function payrollPeriodKey(dateStr, period) {
   return period === "monthly" ? dateStr.slice(0, 7) : dateStr.slice(0, 4);
 }
@@ -869,7 +879,7 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
       rows.push([
         shift.date, emp ? emp.name : "(削除済み)", shift.startTime, shift.endTime || "勤務中", shift.endTime ? formatHours(hours) : "勤務中",
         wage, payrollRankLabel(shift.rankKey), shift.dailyWage || 0, shift.option || 0, shift.option2 || 0, total,
-        shift.note || "", shift.paidDate || "",
+        payrollShiftMemo(shift), shift.paidDate || "",
       ]);
     });
     const empSuffix = viewMode === "individual" ? (employees.find((e) => e.id === selectedEmployeeId)?.name || "individual") : "all";
@@ -1065,8 +1075,8 @@ function ShiftListPanel({ employees, shifts, rankBonusRates, salesHistory, onEdi
                   <div>{shift.option > 0 ? formatNum(shift.option) : "-"}</div>
                   <div>{shift.option2 > 0 ? formatNum(shift.option2) : "-"}</div>
                   <div style={{ fontWeight: 700, color: COLORS.teal }}>{formatNum(total)}</div>
-                  <div style={{ fontFamily: SANS, color: COLORS.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {shift.note || ""}
+                  <div title={payrollShiftMemo(shift)} style={{ fontFamily: SANS, color: COLORS.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {payrollShiftMemo(shift)}
                   </div>
                   <div style={{ fontFamily: SANS, color: shift.paidDate ? COLORS.sage : COLORS.inkSoft, fontWeight: shift.paidDate ? 700 : 400 }}>
                     {shift.paidDate || "-"}
