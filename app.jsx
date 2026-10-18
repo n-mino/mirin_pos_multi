@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/10/07 17:29";
+const APP_LAST_UPDATED = "2026/10/18 12:23";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -337,10 +337,8 @@ const SALES_BACK_TAGS = {
 // 「ボトルバック」商品(products側でbottleBack:trueの商品)が注文に含まれる場合は
 // その売上額(価格×数量の合計)に「ボトル関連」の率をかけた額とも比較し、
 // 大きい方を採用する(合算はしない)。
-// 「30,000円超/50,000円超」の閾値判定・計算に使う小計からは、同伴担当者への
-// 自動追加料金(orders内のisCompanionFee行、実際の商品売上ではない)を除外する。
-// これを含めたままだと、同伴の場合だけ小計が実質+3,000円されて閾値を跨ぎやすくなり、
-// 同じ商品構成でも呼込みと結果がずれてしまうため。
+// 「30,000円超/50,000円超」の閾値判定・計算は、会計画面に表示される小計そのもの
+// (同伴料金など自動追加の明細行も含む)に対して行う。
 // 戻り値は{amount, key}。keyはどのルールを採用したか(SALES_BACK_TAGSのキー。
 // 採用なしはnull)で、売上履歴のメモ欄先頭への自動タグ付けに使う。
 function computeSalesBackAmount(subtotal, guests, salesBackRates, orders, products) {
@@ -350,14 +348,10 @@ function computeSalesBackAmount(subtotal, guests, salesBackRates, orders, produc
   // payrollRankBonus()と同じく、フィールドごとにデフォルト値へフォールバックする。
   const rateFor = (key) => rates[key] ?? PAYROLL_DEFAULT_SALES_BACK_RATES[key] ?? 0;
 
-  const productSubtotal = orders
-    ? orders.reduce((sum, o) => sum + (o.isCompanionFee ? 0 : o.price * o.qty), 0)
-    : subtotal;
-
-  const condGroup = guests >= 5 && productSubtotal > 50000;
-  const condOver30k = productSubtotal > 30000;
+  const condGroup = guests >= 5 && subtotal > 50000;
+  const condOver30k = subtotal > 30000;
   const baseKey = condGroup ? "group5over50k" : condOver30k ? "over30k" : null;
-  const baseRaw = baseKey ? productSubtotal * (rateFor(baseKey) / 100) : 0;
+  const baseRaw = baseKey ? subtotal * (rateFor(baseKey) / 100) : 0;
 
   const bottleIds = new Set((products || []).filter((p) => p.bottleBack).map((p) => p.id));
   const bottleSubtotal = (orders || []).reduce(
@@ -4839,8 +4833,8 @@ function App() {
     const n = guestModalSeat;
     // 同伴で開始した場合、注文リストに「同伴」料金(¥3,000)を自動追加しておく
     // (通常の商品と同じ形の注文行として追加するだけなので、後から数量調整・削除も可能)
-    // isCompanionFee: この行が同伴担当者への料金であり実際の商品売上ではないことを示す目印。
-    // computeSalesBackAmount()の「小計30,000円超」等の閾値判定から除外するために使う。
+    // isCompanionFee: この行が同伴担当者への自動追加料金であることを示す目印
+    // (同伴を外した際の自動削除の対象判定に使う。売上バックの小計には含まれる)。
     const initialOrders = companion && companionKind === "companion"
       ? [{ id: uid("ord"), productId: null, name: "同伴", price: 3000, qty: 1, isCompanionFee: true }]
       : [];
