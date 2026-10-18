@@ -204,7 +204,7 @@ const HEADER_TOP_OFFSET = `max(${HEADER_CLOCK_FONT_SIZE}px, env(safe-area-inset-
 // コード自体を変更した日時(固定値)。マスタ設定画面にのみ表示する。
 // コードを変更するたびに、この値を手動で現在日時に更新すること
 // (CACHE_VERSIONのインクリメントとあわせて更新する運用)。
-const APP_LAST_UPDATED = "2026/10/18 12:36";
+const APP_LAST_UPDATED = "2026/10/18 13:15";
 
 // 商品追加/編集モーダルのカテゴリ選択で常に表示するデフォルトのカテゴリ。
 // 既存商品が使っている他のカテゴリ(「+新規」で追加したものを含む)は
@@ -453,15 +453,36 @@ function seatOrderTotal(seat) {
 }
 
 // 小計 → サービス料 → (小計+サービス料に対して)消費税 の順で計算
-function computeBill(seat, data) {
+// applyRatesがfalseなら率を0%として扱い、小計=合計になる(会計画面の「料率計算」ボタンで切り替える)。
+function computeBill(seat, data, applyRates = true) {
   const subtotal = seatOrderTotal(seat);
-  const serviceRate = data?.serviceChargeRate || 0;
-  const taxRate = data?.taxRate || 0;
+  const serviceRate = applyRates ? data?.serviceChargeRate || 0 : 0;
+  const taxRate = applyRates ? data?.taxRate || 0 : 0;
   const serviceCharge = Math.round(subtotal * (serviceRate / 100));
   const taxBase = subtotal + serviceCharge;
   const tax = Math.round(taxBase * (taxRate / 100));
   const total = taxBase + tax;
   return { subtotal, serviceRate, serviceCharge, taxRate, tax, total };
+}
+
+// 会計(bill・売上履歴レコード)が料率計算ありだったか。売上の編集画面を元の状態で開くために使う。
+function billAppliedRates(bill) {
+  return !!bill && ((bill.serviceRate || 0) > 0 || (bill.taxRate || 0) > 0);
+}
+
+// 管理者の会計画面の「料率計算」切り替えボタン。マスタに率が1つも設定されていなければ表示しない。
+function RateToggleButton({ data, applied, onToggle }) {
+  if (!((data?.serviceChargeRate || 0) > 0 || (data?.taxRate || 0) > 0)) return null;
+  return (
+    <TicketButton
+      variant={applied ? "ghost" : "subtle"}
+      onClick={onToggle}
+      icon={Percent}
+      style={{ width: "100%", marginTop: 12, fontSize: 14 }}
+    >
+      {applied ? "料率計算を解除" : "料率計算"}
+    </TicketButton>
+  );
 }
 
 // ---- Supabase連携(複数端末対応) --------------------------------------
@@ -1939,9 +1960,19 @@ function CompanionEditModal({ seatNum, seat, employees, currentEmployeeName, onC
 /* ---------------------------------------------------------
    会計(料金詳細確認)画面
 --------------------------------------------------------- */
-function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelRequest, initialPayments, initialMemo, confirmLabel }) {
-  const bill = computeBill(seat, data);
+function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelRequest, initialPayments, initialMemo, confirmLabel, initialApplyRates = false }) {
+  const [applyRates, setApplyRates] = useState(initialApplyRates);
+  const bill = computeBill(seat, data, applyRates);
   const { subtotal, serviceRate, serviceCharge, taxRate, tax, total } = bill;
+
+  // 合計が変わるため、入力済みの支払い金額は空に戻して入れ直してもらう
+  const toggleRates = () => {
+    setApplyRates((v) => !v);
+    setCash("");
+    setCard("");
+    setPaypay("");
+    setOnAccount("");
+  };
 
   const [cash, setCash] = useState(initialPayments?.cash ? String(initialPayments.cash) : "");
   const [card, setCard] = useState(initialPayments?.card ? String(initialPayments.card) : "");
@@ -2004,6 +2035,7 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
             <span style={{ fontWeight: 700, color: COLORS.ink }}>合計</span>
             <span style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: COLORS.teal }}>{formatYen(total)}</span>
           </div>
+          <RateToggleButton data={data} applied={applyRates} onToggle={toggleRates} />
         </div>
 
         <div>
@@ -2110,9 +2142,10 @@ function CheckoutScreen({ seatNum, seat, data, now, onBack, onConfirm, onCancelR
 // 「会計を依頼する」を押すと座席を"awaiting_checkout"にするだけで、
 // salesHistoryへの書き込み・座席の解放は一切発生しない。
 function CheckoutPreviewScreen({ seatNum, seat, data, now, onBack, onSubmitPreview, onCancelRequest }) {
-  const bill = computeBill(seat, data);
-  const { subtotal, serviceRate, serviceCharge, taxRate, tax, total } = bill;
   const alreadySubmitted = seat.status === "awaiting_checkout";
+  // スタッフ側は常に小計のみ。料率計算の有無は管理者が会計画面で決める
+  const bill = computeBill(seat, data, false);
+  const { subtotal, serviceRate, serviceCharge, taxRate, tax, total } = bill;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -2572,7 +2605,7 @@ function UserGuidePanel() {
           座席の追加・削除・名称の設定を行います。あわせて、座席カードの色分け(使用中の経過時間による色の切り替わり時間)も設定できます。
         </GuideItem>
         <GuideItem label="税・サービス料">
-          サービス料率・消費税率を設定します。会計時は「小計→サービス料→消費税」の順で自動計算されます。
+          サービス料率・消費税率を設定します。会計画面は小計のみ(率を加算しない)の金額で開き、「料率計算」ボタンを押すと「小計→サービス料→消費税」の順で計算した金額に切り替わります(もう一度押すと解除)。スタッフ側の会計確認画面は常に小計のみを表示し、料率計算は管理者の会計画面でのみ行います。
         </GuideItem>
         <GuideItem label="従業員マスタ">
           左側で従業員の氏名・時給を登録・編集・削除します。右側の「ランク別時給アップ額」では、勤怠入力の「呼込み/同伴/その他」を選んだ際に時給へ加算する金額(1時間あたり)を、全従業員共通で設定できます。その下の「売上バックの率」(小計30,000円超/5人以上+小計50,000円超の2条件と、円未満の端数処理)は、会計確定時に自動計算される「売上バック」に使われます(「ボトル関連」は条件未定のため入力欄のみで、計算には使われません)。

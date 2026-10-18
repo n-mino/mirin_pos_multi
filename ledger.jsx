@@ -1483,6 +1483,7 @@ function ManualSaleEntryScreen({ data, editingSale, currentEmployeeName, onCance
         initialPayments={checkoutResult?.payments || editingSale?.payments}
         initialMemo={checkoutResult?.memo ?? (isEdit ? stripAutoMemoTags(editingSale.memo) : "")}
         confirmLabel="内容を確認する"
+        initialApplyRates={checkoutResult ? billAppliedRates(checkoutResult.bill) : isEdit && billAppliedRates(editingSale)}
         onConfirm={(payments, bill, memo) => { setCheckoutResult({ payments, bill, memo }); setStep("confirm"); }}
       />
     );
